@@ -1,0 +1,17 @@
+{
+	"source": "andabove/skills",
+	"skillPath": "skills/reflect/SKILL.md",
+	"upstream": {
+		"repo": "cursor/plugins",
+		"path": "pstack/skills/reflect",
+		"ref": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+		"license": "MIT"
+	},
+	"adapted": [
+		"transcript location changed from Cursor's agent-transcripts/ directory to Claude Code's ~/.claude/projects/<project-slug>/*.jsonl, with the slug derivation and the no-cross-project-glob warning retargeted",
+		"subagent dispatch changed from Task with subagent_type generalPurpose to Agent with subagent_type general-purpose; readonly:false wording replaced with 'full-tool agent type' since Claude Code has no readonly flag",
+		"Cursor model slugs replaced with Claude model names: reflect-judgment default fable, reflect-tooling default opus",
+		"create-skill handoffs rerouted to direct edits under .claude/skills/ (substantive edits, description tuning, and new-skill creation), following writing-for-agents when installed",
+		"references/*.md: skill-detection paths .cursor/skills/, ~/.cursor/skills/, ~/.cursor/plugins/ changed to .claude/skills/, ~/.claude/skills/, and plugin-installed paths; Task prompts widened to Agent (or Task); Shell tool renamed Bash; 'new skill via create-skill:' routing renamed 'new skill:'"
+	]
+}
