@@ -1,0 +1,14 @@
+{
+  "source": "andabove/skills",
+  "skillPath": "skills/domain-modeling/SKILL.md",
+  "upstream": {
+    "repo": "mattpocock/skills",
+    "path": "skills/engineering/domain-modeling",
+    "ref": "5b15a47f2d7150f545fbcacbfe381787fc0230dc",
+    "license": "MIT"
+  },
+  "adapted": [
+    "made the ADR location optional/generic in SKILL.md and ADR-FORMAT.md: docs/adr/ is the default, but repos that record decisions elsewhere (e.g. plan docs in docs/plans/) use their own convention",
+    "kept the CONTEXT.md glossary format unchanged; it matches the consuming repos' existing convention"
+  ]
+}
