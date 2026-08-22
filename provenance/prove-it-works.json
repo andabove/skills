@@ -1,0 +1,14 @@
+{
+	"source": "andabove/skills",
+	"skillPath": "skills/prove-it-works/SKILL.md",
+	"upstream": {
+		"repo": "cursor/plugins",
+		"path": "pstack/skills/principle-prove-it-works",
+		"ref": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+		"license": "MIT"
+	},
+	"adapted": [
+		"renamed directory and frontmatter name from principle-prove-it-works to prove-it-works (the principle- prefix only meant something inside the upstream principle list)",
+		"added one line naming typical &above proofs: project check commands (pnpm --filter <app> check), invariant scripts, live checks"
+	]
+}
