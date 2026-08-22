@@ -1,0 +1,17 @@
+{
+  "source": "andabove/skills",
+  "skillPath": "skills/wayfinder/SKILL.md",
+  "upstream": {
+    "repo": "mattpocock/skills",
+    "path": "skills/engineering/wayfinder",
+    "ref": "5b15a47f2d7150f545fbcacbfe381787fc0230dc",
+    "license": "MIT"
+  },
+  "adapted": [
+    "local-mode only: the map is a markdown file at docs/plans/<effort>/map.md (or the repo's plan-doc location) with one ticket file each under tickets/, replacing the issue-tracker map, wayfinder:map label, and child issues",
+    "removed the tracker-doc dependency (docs/agents/issue-tracker.md) and the /setup-matt-pocock-skills fallback; the local ticket mechanics (Type:/Status:/Blocked by: lines, frontier scan, claim, resolve) are inlined, adapted from upstream's issue-tracker-local.md conventions",
+    "claiming is Status: claimed instead of tracker assignee; blocking is a Blocked by: line instead of native tracker dependencies; resolution appends an ## Answer heading instead of a resolution comment; out-of-scope tickets are Status: closed",
+    "research subagents link findings files from tickets instead of capturing them on throwaway research/<name> branches",
+    "kept the four runtime skill calls (grilling, domain-modeling, research, prototype); all four ship in this repo; no references to to-tickets, triage, handoff, or to-spec existed upstream"
+  ]
+}
