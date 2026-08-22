@@ -1,6 +1,6 @@
 #!/bin/sh
-# Install skills from this repo into a target repo's .claude/skills/
-# and wire the cross-runtime symlinks.
+# Copy local source skills into a target repo's .claude/skills/
+# and wire the cross-runtime symlinks without changing its lock file.
 # Usage: install.sh <target-repo-root> [skill...]   (default: all skills)
 set -eu
 
@@ -48,12 +48,6 @@ for skill in "$@"; do
 	echo "installed $skill"
 done
 
-node "$repo_root/scripts/update-lock.mjs" \
-	"$target/skills-lock.json" \
-	"$repo_root/provenance" \
-	"$@"
-echo "updated skills-lock.json"
-
 for dir in .agents .cursor; do
 	mkdir -p "$target/$dir"
 	if [ ! -L "$target/$dir/skills" ]; then
@@ -61,3 +55,5 @@ for dir in .agents .cursor; do
 		echo "linked $dir/skills -> ../.claude/skills"
 	fi
 done
+
+echo "skills-lock.json unchanged; deploy pushed changes with npx skills add"
