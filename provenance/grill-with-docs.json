@@ -1,0 +1,13 @@
+{
+  "source": "andabove/skills",
+  "skillPath": "skills/grill-with-docs/SKILL.md",
+  "upstream": {
+    "repo": "mattpocock/skills",
+    "path": "skills/engineering/grill-with-docs",
+    "ref": "5b15a47f2d7150f545fbcacbfe381787fc0230dc",
+    "license": "MIT"
+  },
+  "adapted": [
+    "no content changes: the grilling and domain-modeling references are plain skill names, verified to resolve against the copies shipped in this repo"
+  ]
+}
