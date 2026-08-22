@@ -1,0 +1,13 @@
+{
+  "source": "andabove/skills",
+  "skillPath": "skills/research/SKILL.md",
+  "upstream": {
+    "repo": "mattpocock/skills",
+    "path": "skills/engineering/research",
+    "ref": "5b15a47f2d7150f545fbcacbfe381787fc0230dc",
+    "license": "MIT"
+  },
+  "adapted": [
+    "named the output location: findings go to the consuming repo's docs (docs/research/ or the repo's report convention), defaulting to docs/research/ when no convention exists"
+  ]
+}
