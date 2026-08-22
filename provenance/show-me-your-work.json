@@ -8,8 +8,10 @@
 		"license": "MIT"
 	},
 	"adapted": [
-		"transcript audit path changed from Cursor's agent-transcripts/ directory to Claude Code's ~/.claude/projects/<project-slug>/*.jsonl, with the no-cross-project-glob warning retargeted",
-		"cross-model review reworded from 'different model family' to a different Claude model (fable, opus, sonnet) since only Claude models are available in Claude Code",
+		"transcript audit uses the active runtime's current-session API or store, with active-context fallback and a no-cross-session boundary",
+		"cross-model review selects from the runtime's available models and has explicit same-model and no-subagent fallbacks",
+		"local log placement now requires an ignored repository work-artifact path when available",
+		"the final audit appends correction rows instead of conflicting with the append-only history rule",
 		"kept references/decision-log-template.tsv and scripts/log.sh verbatim"
 	]
 }

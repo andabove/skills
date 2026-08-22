@@ -1,6 +1,6 @@
 ---
 name: reflect
-description: Spawn three parallel review subagents over the active transcript, surface learnings, and route each to a concrete edit on an existing skill. Use when the user says reflect.
+description: Run three independent reviews of the active session, surface durable learnings, and route each to a concrete skill edit. Use when the user says reflect.
 disable-model-invocation: true
 ---
 
@@ -10,41 +10,29 @@ Mine the current conversation for durable learnings, then route them into skill 
 
 ## When to invoke
 
-- The user said "reflect" or "/reflect".
-- A complex task (5+ tool calls) just landed cleanly and the recipe is worth keeping.
-- The agent hit dead ends, found the working path, and the path generalizes.
-- The user corrected the agent's approach mid-task.
-- A non-trivial workflow emerged that isn't captured anywhere.
-
-Skip when the conversation is trivial, off-topic, or already covered by an existing skill the parent followed correctly. One-offs are not learnings.
+Run when the user says "reflect" or "/reflect". If the conversation is trivial, off-topic, or already covered by a skill that the parent followed correctly, report that there is no durable learning and stop. One-offs are not learnings.
 
 ## Process
 
 ### 1. Locate the active transcript
 
-The parent finds its own transcript file before fanning out. Claude Code writes transcripts to `~/.claude/projects/<project-slug>/*.jsonl`, where the slug is the project's absolute path with `/` replaced by `-`. Resolve the slug from the current working directory. Do not glob across `~/.claude/projects/*/`. That crosses project boundaries and reads private chats from unrelated projects.
-
-```bash
-ls -t ~/.claude/projects/<project-slug>/*.jsonl 2>/dev/null | head -10
-```
-
-For each candidate, read the first JSONL lines and check that the recorded user message contains the conversation's opening user prompt. Take the matching path. If no path resolves, write a tight digest of the session and pass that instead.
+Use the runtime's current-session transcript API or session store when it exposes one. Resolve only the transcript for the current project and session. Do not scan unrelated projects or sessions. Confirm that the opening user message matches this session. If the runtime does not expose a safe transcript path, write a tight digest of the active conversation and pass that instead. This step is complete when all reviewers can read the same session evidence.
 
 ### 2. Spawn three reviewers in parallel
 
-One message, three `Agent` calls, `subagent_type: general-purpose`, explicit `model:` on each. Use a full-tool agent type, not a read-only one: reviewers need MCP access for context lookups (tickets, chat threads, observability traces referenced in the transcript). The prompt forbids file writes; the parent applies edits.
+Start three general-purpose review subagents in parallel when the runtime permits it. Use full-tool agents because reviewers can need read access to context named in the session. The prompt forbids writes; the parent applies edits. If parallel dispatch is unavailable, run the three subagents in sequence. If subagents are unavailable, stop and tell the user that this skill needs subagent support.
 
-| Lens | `model` | Prompt template |
+| Lens | Model choice | Prompt template |
 |---|---|---|
-| Judgment | your configured reflect-judgment model (default `fable`) | `references/judgment-reviewer.md` |
-| Tooling | your configured reflect-tooling model (default `opus`) | `references/tooling-reviewer.md` |
-| Divergent | your configured reflect-judgment model (default `fable`) | `references/divergent-reviewer.md` |
+| Judgment | strongest available reasoning model | `references/judgment-reviewer.md` |
+| Tooling | strongest available coding or tool-use model | `references/tooling-reviewer.md` |
+| Divergent | a different available model when possible | `references/divergent-reviewer.md` |
 
-Pass each template verbatim, substituting the transcript path or digest where marked. Reviewers return findings in the `Agent` response body.
+Use the runtime's available model list. Do not assume fixed model names. Pass each template verbatim, and substitute the transcript path or digest where marked. Reviewers return findings in the subagent response.
 
 ### 3. Synthesize
 
-One `Agent` call, `subagent_type: general-purpose`, using your configured reflect-judgment model (default `fable`), a full-tool agent type. The synthesizer's quality check includes spot-verifying citations, which can require MCP access. Use `references/synthesizer.md` verbatim, with each reviewer's full output inlined where marked. The synthesizer returns a structured Accepted / Rejected / Backlog list.
+Start one full-tool general-purpose subagent on the strongest available reasoning model. The synthesizer's quality check includes spot-verifying citations, which can require connected tools. Use `references/synthesizer.md` verbatim, with each reviewer's full output inlined where marked. The synthesizer returns a structured Accepted / Rejected / Backlog list.
 
 ### 4. Structural enforcement check
 
@@ -56,12 +44,12 @@ Before applying any Accepted edit, present the synthesizer's full Accepted/Rejec
 
 Backlog items file to whatever devex / backlog tracker your team uses automatically. Those are tracker submissions, not skill edits. Only the Accepted list waits for approval.
 
-For each approved Accepted item, follow the Routing field exactly:
+For each approved Accepted item, find the skill's canonical source from the consuming repository's agent documentation or lock file. Edit that source, not a generated or installed copy. Then follow the Routing field:
 
 - Trivial existing-skill edit (a one-line bullet, a tightened sentence, a stale fact corrected): parent does directly.
-- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): edit the skill under `.claude/skills/<name>/` directly, following the `writing-for-agents` skill if it is installed.
+- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): edit the canonical skill source, following the `writing-for-agents` skill if it is installed.
 - `tune description: <skill path>` (the skill exists but didn't trigger when it should have): rewrite the `description` frontmatter in that skill's `SKILL.md` so the missed trigger fires next time.
-- `new skill: <kebab-name>`: create `.claude/skills/<kebab-name>/SKILL.md` with `name` and `description` frontmatter, following `writing-for-agents` if it is installed.
+- `new skill: <kebab-name>`: create it in the repository's canonical skill source with `name` and `description` frontmatter, following `writing-for-agents` if it is installed.
 
 If your environment ships a SKILL.md validator, run it on every touched skill before declaring done. Skip this step if it doesn't.
 

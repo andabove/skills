@@ -41,7 +41,7 @@ Log decision points and checkpoints, not every action: a fork chosen, a unit com
 
 ## Where it lives
 
-By default the log is a working artifact, not committed. Keep it at `decisions.tsv` in the work dir, or `.audit/<task-slug>.tsv` when several efforts run at once, and leave it out of git. Most work doesn't need a committed trail; the local log still keeps the run honest and can be discarded after.
+By default the log is a working artifact, not committed. Keep it in the repository's ignored work-artifact directory, such as `.context/<task-slug>.tsv` or `.audit/<task-slug>.tsv`. Confirm that Git ignores the path before writing. If the repository has no such directory, use `decisions.tsv` in the work directory and keep it unstaged. Most work doesn't need a committed trail; the local log still keeps the run honest and can be discarded after.
 
 Commit it only when the work is ambitious enough that a reviewer needs the trail to trust the result: a large cross-language port, a multi-week migration, anything where confidence has to be shown rather than assumed. A committed log renders as a table in the PR.
 
@@ -53,25 +53,27 @@ Commit it only when the work is ambitious enough that a reviewer needs the trail
 
 ## Audit the log against the transcript
 
-At the end of the run, before handing back, check the log told the truth. Read this run's transcript at `~/.claude/projects/<project-slug>/*.jsonl`, where the slug is the project's absolute path with `/` replaced by `-`; take the newest file whose opening user message matches this session. Don't glob across `~/.claude/projects/*/`; that reads unrelated private chats. Walk the log against what actually happened:
+At the end of the run, before handing back, check the log told the truth. Use the runtime's current-session transcript API or session store when it exposes one. Resolve only the transcript for the current project and session. Do not scan unrelated projects or sessions. If the runtime does not expose a safe transcript path, audit against the active conversation context. Walk the log against what actually happened:
 
-- Every row maps to a real action. Cut invented or aspirational entries.
+- Every row maps to a real action. If an earlier row is wrong, append a correction that names its timestamp and supersedes its result.
 - Each row's evidence resolves and shows what the row claims.
 - A fork, pivot, or abandoned approach that shaped the work but isn't logged is a gap. Add it.
-- Drop padding. If nobody would audit a row, it doesn't earn its place.
+- Do not add padding. If nobody would audit a row, it does not earn a new entry.
 
-Fix the log, not the story. If the work diverged from what a row claims, the row is wrong.
+Fix the log, not the story. If the work diverged from what a row claims, append a correction. Never rewrite prior rows.
 
 ## Cross-model review of the trail
 
-Before handing back, you must spawn a subagent on a different model from the one that did the work (fable, opus, or sonnet - pick one the run itself did not use). Self-review is not a substitute; the point is fresh eyes you cannot bring yourself. The subagent reads the audit trail and the run's transcript, then flags what the user should pay attention to. Not a redo of the work, a scan for what's suboptimal or risky.
+Before handing back, spawn a review subagent on a different available model from the one that did the work. Use the runtime's available model list; do not assume fixed model names. The subagent reads the audit trail and the run's transcript or active context, then flags what the user should inspect. This is a scan for weak evidence and risk, not a redo of the work.
+
+If no different model is available, use a fresh review subagent and state that it used the same model. If the runtime has no subagent capability, run a separate review pass and state that limitation. Do not omit the review.
 
 - Decisions logged with weak or absent evidence.
 - Verification steps skipped or claimed without proof in the transcript.
 - Choices that look risky in hindsight (premature, scope-creeping, papering over a symptom).
 - Gaps the user would otherwise miss on a casual skim.
 
-Every reply for a run that produced a trail ends with an "Attention" section. Lead with the reviewer's model on its own line (`reviewed by <model>`), then list each flag pointing to specific rows or moments. "No flags" is a valid value; the model name is not. The self-audit asks if the log told the truth; this asks what the user should still scrutinize even when it did.
+Every reply for a run that produced a trail ends with an "Attention" section. Lead with the review method on its own line (`reviewed by <model>` or `independent pass - subagents unavailable`), then list each flag that points to a specific row or moment. "No flags" is a valid value; the review method is not. The self-audit asks if the log told the truth; this asks what the user should still inspect even when it did.
 
 ## Reviewing the trail
 

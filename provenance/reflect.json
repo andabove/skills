@@ -8,10 +8,10 @@
 		"license": "MIT"
 	},
 	"adapted": [
-		"transcript location changed from Cursor's agent-transcripts/ directory to Claude Code's ~/.claude/projects/<project-slug>/*.jsonl, with the slug derivation and the no-cross-project-glob warning retargeted",
-		"subagent dispatch changed from Task with subagent_type generalPurpose to Agent with subagent_type general-purpose; readonly:false wording replaced with 'full-tool agent type' since Claude Code has no readonly flag",
-		"Cursor model slugs replaced with Claude model names: reflect-judgment default fable, reflect-tooling default opus",
-		"create-skill handoffs rerouted to direct edits under .claude/skills/ (substantive edits, description tuning, and new-skill creation), following writing-for-agents when installed",
-		"references/*.md: skill-detection paths .cursor/skills/, ~/.cursor/skills/, ~/.cursor/plugins/ changed to .claude/skills/, ~/.claude/skills/, and plugin-installed paths; Task prompts widened to Agent (or Task); Shell tool renamed Bash; 'new skill via create-skill:' routing renamed 'new skill:'"
+		"transcript discovery uses the active runtime's current-session API or store, with a session digest fallback and a no-cross-session boundary",
+		"subagent dispatch and model selection use runtime capabilities instead of fixed tool names, model names, or Claude-only agent types",
+		"skill edits go to the canonical source named by repository documentation or its lock file instead of an installed runtime copy",
+		"the invocation section now matches user-only invocation instead of listing automatic trigger cases that cannot load the skill",
+		"references/*.md use runtime-neutral file-read, subagent, shell, search, and connected-tool wording and recognize .claude, .agents, and .cursor skill paths"
 	]
 }
