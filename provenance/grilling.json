@@ -1,0 +1,13 @@
+{
+  "source": "andabove/skills",
+  "skillPath": "skills/grilling/SKILL.md",
+  "upstream": {
+    "repo": "mattpocock/skills",
+    "path": "skills/productivity/grilling",
+    "ref": "5b15a47f2d7150f545fbcacbfe381787fc0230dc",
+    "license": "MIT"
+  },
+  "adapted": [
+    "no content changes: verified free of Matt-persona references; upstream round format kept verbatim"
+  ]
+}
