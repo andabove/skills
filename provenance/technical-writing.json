@@ -1,0 +1,14 @@
+{
+	"source": "andabove/skills",
+	"skillPath": "skills/technical-writing/SKILL.md",
+	"upstream": {
+		"repo": "cursor/plugins",
+		"path": "pstack/skills/technical-writing",
+		"ref": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+		"license": "MIT"
+	},
+	"adapted": [
+		"added '&above overrides' section: no-hedging guidance suspended under docs/seo/reports/, docs/seo/reports/aeo/, docs/seo/reports/positioning/; never remove qualification that narrows a claim to the evidence",
+		"kept the delegation pointer to unslop, which ships in this repo"
+	]
+}
