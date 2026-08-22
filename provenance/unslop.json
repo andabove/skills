@@ -9,7 +9,6 @@
 	},
 	"adapted": [
 		"rewrote description into a branch-listing trigger pointer (copy, marketing/site text, reports, PR descriptions, emails, docs)",
-		"added inline '&above overrides' section: rule 24 (cut hedging) suspended under docs/seo/reports/, docs/seo/reports/aeo/, docs/seo/reports/positioning/; never remove qualification that narrows a claim to the evidence",
-		"added &above dash convention: \" - \" never em dashes, noted as the exception to rule 13's hyphen-as-dash ban"
+		"changed rule 24 to cut filler uncertainty while keeping qualification that limits a claim to its evidence"
 	]
 }

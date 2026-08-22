@@ -12,7 +12,7 @@ Verify every task output by checking the real thing directly. Do not infer from 
 
 **Pattern:** After completing any task, ask: "how do I prove this actually works?"
 
-Typical proofs at &above: the project's check command (for example `pnpm --filter <app> check`), an invariant script, or a live check against the running site.
+Typical proofs include the project's check command, an invariant script, or a live check against the running system.
 
 Check the real thing, not a proxy:
 - Check process liveness directly, not indirectly through derived state

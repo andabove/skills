@@ -7,11 +7,6 @@ description: Cut AI tells from any writing. Use when drafting or editing copy, m
 
 Edit text to remove AI patterns and add human voice.
 
-## &above overrides
-
-- Rule 24 (cut excessive hedging) is suspended for files under `docs/seo/reports/`, `docs/seo/reports/aeo/`, and `docs/seo/reports/positioning/`. In an evidence report a hedge that tracks the evidence is correct. Never remove qualification that narrows a claim to what the evidence supports.
-- In &above copy, separate clauses with " - " (space, hyphen, space), never an em dash. This is the one exception to rule 13's ban on hyphen-as-dash substitutes.
-
 ## Process
 
 1. Scan for the patterns below.
@@ -69,7 +64,7 @@ Removing patterns is half the job. Sterile, voiceless writing is just as obvious
 ### Filler
 
 23. **Filler phrases.** "In order to" becomes "To". "Due to the fact that" becomes "Because". "It is important to note that" gets deleted.
-24. **Excessive hedging.** "could potentially possibly be argued that it might" becomes "may".
+24. **Excessive hedging.** Cut filler uncertainty: "could potentially possibly be argued that it might" becomes "may". Keep qualification that limits a claim to its evidence, such as "in the seven pages sampled" or "as of Friday's crawl".
 25. **Generic conclusions.** "The future looks bright." State specific plans or facts.
 
 ### Jargon

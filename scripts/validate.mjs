@@ -5,6 +5,12 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const skillsDirectory = join(repositoryRoot, "skills");
 const provenanceDirectory = join(repositoryRoot, "provenance");
+const brandedSkillNames = new Set();
+const genericSkillForbiddenMarkers = [
+	["&above brand reference", /&above|\bandabove\b/i],
+	["web repository path", /\b(?:apps\/marketing|content\/andabove|docs\/seo|packages\/(?:content-schema|glass|particles))(?:\/|\b)/i],
+	["web repository command", /\bpnpm\s+--filter\s+marketing\b/i],
+];
 
 async function readJson(path) {
 	return JSON.parse(await readFile(path, "utf8"));
@@ -78,6 +84,13 @@ async function validateSkill(name, errors) {
 
 	for (const markdownPath of await markdownFiles(skillDirectory)) {
 		const text = await readFile(markdownPath, "utf8");
+		if (!brandedSkillNames.has(name)) {
+			for (const [label, pattern] of genericSkillForbiddenMarkers) {
+				if (pattern.test(text)) {
+					errors.push(`${relative(repositoryRoot, markdownPath)}: generic skill contains ${label}`);
+				}
+			}
+		}
 		for (const target of localLinks(text)) {
 			if (!(await pathExists(resolve(dirname(markdownPath), target)))) {
 				errors.push(`${relative(repositoryRoot, markdownPath)}: unresolved link ${target}`);

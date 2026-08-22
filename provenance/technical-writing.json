@@ -8,7 +8,7 @@
 		"license": "MIT"
 	},
 	"adapted": [
-		"added '&above overrides' section: no-hedging guidance suspended under docs/seo/reports/, docs/seo/reports/aeo/, docs/seo/reports/positioning/; never remove qualification that narrows a claim to the evidence",
+		"changed reference-mode guidance to cut filler hedging while keeping qualification that limits a claim to its evidence",
 		"kept the delegation pointer to unslop, which ships in this repo"
 	]
 }

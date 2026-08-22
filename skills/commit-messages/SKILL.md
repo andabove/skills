@@ -26,8 +26,8 @@ Write a one-line subject that names the change and its local area.
 
 ## Choose the type and scope
 
-- Reuse types from recent history. Common defaults are `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, and `chore`. Keep useful domain types such as `seo` or `content` when the repository uses them.
-- Use the smallest stable area as the scope. Prefer an established scope from recent history, such as `marketing`, `seo`, `skills`, `build`, or `agents`.
+- Reuse types from recent history. Common defaults are `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, and `chore`. Keep additional types that recent history uses consistently.
+- Use the smallest stable area as the scope. Prefer an established application, package, service, or workflow name from recent history.
 - Omit the scope only when the change applies to the whole repository or the history has no scope pattern.
 - Keep ticket numbers and branch names out of the scope unless the repository uses them as scopes.
 
@@ -43,8 +43,8 @@ If one subject cannot describe the staged change, propose separate commits. Do n
 Examples:
 
 ```text
-feat(marketing): add the service comparison section
-fix(content): correct the webinar route
-docs(seo): qualify the positioning report claims
-chore(skills): add commit message guidance
+feat(api): add the account status endpoint
+fix(auth): preserve the session after refresh
+docs(cli): clarify the configuration command
+chore(build): add the staged-file check
 ```
