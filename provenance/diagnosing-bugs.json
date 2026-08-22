@@ -1,0 +1,15 @@
+{
+  "source": "andabove/skills",
+  "skillPath": "skills/diagnosing-bugs/SKILL.md",
+  "upstream": {
+    "repo": "mattpocock/skills",
+    "path": "skills/engineering/diagnosing-bugs",
+    "ref": "5b15a47f2d7150f545fbcacbfe381787fc0230dc",
+    "license": "MIT"
+  },
+  "adapted": [
+    "repointed the ADR check generically: recorded decisions live in the consuming repo's plan docs (e.g. docs/plans/) or ADRs where it keeps them",
+    "folded a stale-state clause into Phase 3 (rank stale state first when the failure appeared without a code change) and a fix-the-pattern-not-the-instance grep clause into Phase 5",
+    "second upstream: the two folded clauses ('suspect stale state before code', 'grep for the pattern, not the instance') derive from cursor/plugins pstack/skills/principle-fix-root-causes (MIT, Copyright (c) 2026 Lauren Tan)"
+  ]
+}
