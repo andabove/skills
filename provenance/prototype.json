@@ -1,0 +1,13 @@
+{
+  "source": "andabove/skills",
+  "skillPath": "skills/prototype/SKILL.md",
+  "upstream": {
+    "repo": "mattpocock/skills",
+    "path": "skills/engineering/prototype",
+    "ref": "5b15a47f2d7150f545fbcacbfe381787fc0230dc",
+    "license": "MIT"
+  },
+  "adapted": [
+    "no content changes: SKILL.md, LOGIC.md, and UI.md are generic; verified free of Matt-persona references"
+  ]
+}
