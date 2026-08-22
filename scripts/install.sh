@@ -23,6 +23,16 @@ if [ "$#" -eq 0 ]; then
 	set -- $(ls "$repo_root/skills")
 fi
 
+for dir in .agents .cursor; do
+	skill_link="$target/$dir/skills"
+	if [ -e "$skill_link" ] || [ -L "$skill_link" ]; then
+		if [ ! -L "$skill_link" ] || [ "$(readlink "$skill_link")" != "../.claude/skills" ]; then
+			echo "install.sh: existing path does not point to ../.claude/skills: $skill_link" >&2
+			exit 1
+		fi
+	fi
+done
+
 mkdir -p "$target/.claude/skills"
 
 for skill in "$@"; do
@@ -36,9 +46,15 @@ for skill in "$@"; do
 	echo "installed $skill"
 done
 
+node "$repo_root/scripts/update-lock.mjs" \
+	"$target/skills-lock.json" \
+	"$repo_root/provenance.json" \
+	"$@"
+echo "updated skills-lock.json"
+
 for dir in .agents .cursor; do
 	mkdir -p "$target/$dir"
-	if [ ! -e "$target/$dir/skills" ]; then
+	if [ ! -L "$target/$dir/skills" ]; then
 		ln -s ../.claude/skills "$target/$dir/skills"
 		echo "linked $dir/skills -> ../.claude/skills"
 	fi

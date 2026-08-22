@@ -16,7 +16,7 @@ Until then, copy the skills you want into a repo's `.claude/skills/`, or run:
 scripts/install.sh <target-repo-root> [skill...]
 ```
 
-With no skill names it installs every skill. It also wires the cross-runtime symlinks if they are missing:
+With no skill names it installs every skill. It updates the target repo's `skills-lock.json` with the installed skills and their provenance. It also wires the cross-runtime symlinks if they are missing:
 
 ```
 .agents/skills -> ../.claude/skills
