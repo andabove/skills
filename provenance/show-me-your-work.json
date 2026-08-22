@@ -1,0 +1,15 @@
+{
+	"source": "andabove/skills",
+	"skillPath": "skills/show-me-your-work/SKILL.md",
+	"upstream": {
+		"repo": "cursor/plugins",
+		"path": "pstack/skills/show-me-your-work",
+		"ref": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+		"license": "MIT"
+	},
+	"adapted": [
+		"transcript audit path changed from Cursor's agent-transcripts/ directory to Claude Code's ~/.claude/projects/<project-slug>/*.jsonl, with the no-cross-project-glob warning retargeted",
+		"cross-model review reworded from 'different model family' to a different Claude model (fable, opus, sonnet) since only Claude models are available in Claude Code",
+		"kept references/decision-log-template.tsv and scripts/log.sh verbatim"
+	]
+}
