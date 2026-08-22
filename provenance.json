@@ -16,6 +16,12 @@
         "dropped step 4's 'Same rules as why' cross-reference; the rules it pointed at are stated inline"
       ]
     },
+    "commit-messages": {
+      "source": "andabove/skills",
+      "skillPath": "skills/commit-messages/SKILL.md",
+      "origin": "original",
+      "license": "MIT"
+    },
     "diagnosing-bugs": {
       "source": "andabove/skills",
       "skillPath": "skills/diagnosing-bugs/SKILL.md",
@@ -160,7 +166,8 @@
       },
       "adapted": [
         "added '&above overrides' section: no-hedging guidance suspended under docs/seo/reports/, docs/seo/reports/aeo/, docs/seo/reports/positioning/; never remove qualification that narrows a claim to the evidence",
-        "kept the delegation pointer to unslop, which ships in this repo"
+        "kept the delegation pointer to unslop, which ships in this repo",
+        "removed commit messages from the trigger and body because the commit-messages skill owns repository-specific commit style"
       ]
     },
     "unslop": {
