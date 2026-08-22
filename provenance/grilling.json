@@ -8,6 +8,7 @@
     "license": "MIT"
   },
   "adapted": [
-    "no content changes: verified free of Matt-persona references; upstream round format kept verbatim"
+    "replaced emoji markers in the round format with plain-text labels to match shared repo and consuming repo copy rules",
+    "fact-finding now prefers subagents when available and falls back to inline lookup when they are not"
   ]
 }

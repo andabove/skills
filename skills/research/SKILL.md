@@ -3,7 +3,7 @@ name: research
 description: Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo. Use when the user wants a topic researched, docs or API facts gathered, or reading legwork delegated to a background agent.
 ---
 
-Spin up a **background agent** to do the research, so you keep working while it reads.
+Use a **background agent** to do the research when the runtime supports it, so you keep working while it reads. If the runtime has no background or subagent capability, do the research in the current session and state that you stayed inline.
 
 Its job:
 

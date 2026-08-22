@@ -20,7 +20,7 @@ Use the runtime's current-session transcript API or session store when it expose
 
 ### 2. Spawn three reviewers in parallel
 
-Start three general-purpose review subagents in parallel when the runtime permits it. Use full-tool agents because reviewers can need read access to context named in the session. The prompt forbids writes; the parent applies edits. If parallel dispatch is unavailable, run the three subagents in sequence. If subagents are unavailable, stop and tell the user that this skill needs subagent support.
+Start three general-purpose review subagents in parallel when the runtime permits it. Use full-tool agents because reviewers can need read access to context named in the session. The prompt forbids writes; the parent applies edits. If parallel dispatch is unavailable, run the three subagents in sequence. If subagents are unavailable, run three separate manual review passes yourself against the same transcript evidence and keep the outputs separate by lens.
 
 | Lens | Model choice | Prompt template |
 |---|---|---|
@@ -28,11 +28,11 @@ Start three general-purpose review subagents in parallel when the runtime permit
 | Tooling | strongest available coding or tool-use model | `references/tooling-reviewer.md` |
 | Divergent | a different available model when possible | `references/divergent-reviewer.md` |
 
-Use the runtime's available model list. Do not assume fixed model names. Pass each template verbatim, and substitute the transcript path or digest where marked. Reviewers return findings in the subagent response.
+Use the runtime's available model list. Do not assume fixed model names. Pass each template verbatim, and substitute the transcript path or digest where marked. Reviewers return findings in the subagent response. If you must run the passes yourself, use the same templates as checklists and record three separate outputs before you synthesize.
 
 ### 3. Synthesize
 
-Start one full-tool general-purpose subagent on the strongest available reasoning model. The synthesizer's quality check includes spot-verifying citations, which can require connected tools. Use `references/synthesizer.md` verbatim, with each reviewer's full output inlined where marked. The synthesizer returns a structured Accepted / Rejected / Backlog list.
+Start one full-tool general-purpose subagent on the strongest available reasoning model. The synthesizer's quality check includes spot-verifying citations, which can require connected tools. Use `references/synthesizer.md` verbatim, with each reviewer's full output inlined where marked. The synthesizer returns a structured Accepted / Rejected / Backlog list. If subagents are unavailable, apply the same synthesizer prompt yourself to the three manual review outputs.
 
 ### 4. Structural enforcement check
 

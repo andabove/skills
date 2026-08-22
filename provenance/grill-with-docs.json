@@ -8,6 +8,6 @@
     "license": "MIT"
   },
   "adapted": [
-    "no content changes: the grilling and domain-modeling references are plain skill names, verified to resolve against the copies shipped in this repo"
+    "replaced 'call the Skill tool' with runtime-neutral wording that tells the agent to use the grilling and domain-modeling skills together"
   ]
 }
