@@ -1,0 +1,15 @@
+{
+	"source": "andabove/skills",
+	"skillPath": "skills/blast-radius/SKILL.md",
+	"upstream": {
+		"repo": "cursor/plugins",
+		"path": "pstack/skills/blast-radius",
+		"ref": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+		"license": "MIT"
+	},
+	"adapted": [
+		"deleted the 'Companion to how and why' paragraph (those skills are not shipped here)",
+		"reworded step 1's 'Use why step 2' pointer to a plain instruction to pull the PR and commits",
+		"dropped step 4's 'Same rules as why' cross-reference; the rules it pointed at are stated inline"
+	]
+}
