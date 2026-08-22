@@ -1,0 +1,11 @@
+{
+  "source": "andabove/skills",
+  "skillPath": "skills/writing-for-agents/SKILL.md",
+  "upstream": {
+    "repo": "mattpocock/skills",
+    "path": "skills/productivity/writing-for-agents",
+    "ref": "5b15a47f2d7150f545fbcacbfe381787fc0230dc",
+    "license": "MIT"
+  },
+  "adapted": []
+}
