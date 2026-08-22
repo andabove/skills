@@ -1,4 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 async function readJson(path) {
 	return JSON.parse(await readFile(path, "utf8"));
@@ -34,22 +35,16 @@ function createLockEntry(entry) {
 }
 
 async function main() {
-	const [lockPath, provenancePath, ...skillNames] = process.argv.slice(2);
-	if (!lockPath || !provenancePath || skillNames.length === 0) {
-		throw new Error("usage: update-lock.mjs <lock-path> <provenance-path> <skill...>");
+	const [lockPath, provenanceDirectory, ...skillNames] = process.argv.slice(2);
+	if (!lockPath || !provenanceDirectory || skillNames.length === 0) {
+		throw new Error("usage: update-lock.mjs <lock-path> <provenance-directory> <skill...>");
 	}
 
-	const [lock, provenance] = await Promise.all([
-		readLock(lockPath),
-		readJson(provenancePath),
-	]);
+	const lock = await readLock(lockPath);
 	const skills = { ...(lock.skills ?? {}) };
 
 	for (const skillName of skillNames) {
-		const entry = provenance.skills?.[skillName];
-		if (!entry) {
-			throw new Error(`missing provenance for skill: ${skillName}`);
-		}
+		const entry = await readJson(resolve(provenanceDirectory, `${skillName}.json`));
 
 		skills[skillName] = createLockEntry(entry);
 	}

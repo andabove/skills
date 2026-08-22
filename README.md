@@ -25,6 +25,10 @@ With no skill names it installs every skill. It updates the target repo's `skill
 
 `.claude/skills/` is the canonical directory; the symlinks let Cursor and generic AGENTS.md agents read the same files.
 
+In this source repository, `skills/` is canonical. `.claude/skills`, `.agents/skills`, and `.cursor/skills` point to it so each supported runtime discovers the source skills while you edit them. `CLAUDE.md` points to `AGENTS.md` so both instruction formats use the same rules.
+
 ## Updating an adapted skill
 
-Adapted skills are edited here and reinstalled into consuming repos. Never patch a skill in a consuming repo - the next install overwrites the patch. Each adapted skill's `provenance/<name>.json` pins the upstream commit, so diffing against upstream is one command.
+Adapted skills are edited here and reinstalled into consuming repos. Never patch a skill in a consuming repo - the next install overwrites the patch. Each adapted skill's `provenance/<name>.json` is the single provenance record and pins the upstream commit, so diffing against upstream is one command.
+
+Run `node scripts/validate.mjs` before commit. The installer runs the same check before it changes a consuming repository.

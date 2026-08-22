@@ -1,0 +1,112 @@
+import { readdir, readFile, stat } from "node:fs/promises";
+import { dirname, extname, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const skillsDirectory = join(repositoryRoot, "skills");
+const provenanceDirectory = join(repositoryRoot, "provenance");
+
+async function readJson(path) {
+	return JSON.parse(await readFile(path, "utf8"));
+}
+
+async function pathExists(path) {
+	try {
+		await stat(path);
+		return true;
+	} catch (error) {
+		if (error.code === "ENOENT") return false;
+		throw error;
+	}
+}
+
+async function markdownFiles(directory) {
+	const entries = await readdir(directory, { withFileTypes: true });
+	const files = [];
+
+	for (const entry of entries) {
+		const path = join(directory, entry.name);
+		if (entry.isDirectory()) files.push(...(await markdownFiles(path)));
+		if (entry.isFile() && extname(entry.name) === ".md") files.push(path);
+	}
+
+	return files;
+}
+
+function frontmatter(text) {
+	const match = text.match(/^---\n([\s\S]*?)\n---/);
+	return match?.[1] ?? "";
+}
+
+function field(source, name) {
+	return source.match(new RegExp(`^${name}:\\s*["']?([^\\n"']+)`, "m"))?.[1]?.trim();
+}
+
+function localLinks(text) {
+	const prose = text.replace(/```[\s\S]*?```/g, "").replace(/~~~[\s\S]*?~~~/g, "");
+	return [...prose.matchAll(/\[[^\]]*\]\(([^)#]+)(?:#[^)]+)?\)/g)]
+		.map((match) => match[1])
+		.filter((target) => !/^(?:https?:|mailto:|skill:)/.test(target))
+		.filter((target) => target.startsWith(".") || target.includes("/") || extname(target));
+}
+
+async function validateSkill(name, errors) {
+	const skillDirectory = join(skillsDirectory, name);
+	const skillPath = join(skillDirectory, "SKILL.md");
+	const provenancePath = join(provenanceDirectory, `${name}.json`);
+
+	if (!(await pathExists(skillPath))) {
+		errors.push(`${name}: missing SKILL.md`);
+		return;
+	}
+
+	if (!(await pathExists(provenancePath))) {
+		errors.push(`${name}: missing provenance/${name}.json`);
+		return;
+	}
+
+	const [skillText, provenance] = await Promise.all([
+		readFile(skillPath, "utf8"),
+		readJson(provenancePath),
+	]);
+	const metadata = frontmatter(skillText);
+
+	if (field(metadata, "name") !== name) errors.push(`${name}: frontmatter name does not match directory`);
+	if (!field(metadata, "description")) errors.push(`${name}: missing frontmatter description`);
+	if (provenance.source !== "andabove/skills") errors.push(`${name}: provenance source must be andabove/skills`);
+	if (provenance.skillPath !== `skills/${name}/SKILL.md`) errors.push(`${name}: provenance skillPath does not match directory`);
+
+	for (const markdownPath of await markdownFiles(skillDirectory)) {
+		const text = await readFile(markdownPath, "utf8");
+		for (const target of localLinks(text)) {
+			if (!(await pathExists(resolve(dirname(markdownPath), target)))) {
+				errors.push(`${relative(repositoryRoot, markdownPath)}: unresolved link ${target}`);
+			}
+		}
+	}
+}
+
+async function main() {
+	const skillEntries = await readdir(skillsDirectory, { withFileTypes: true });
+	const skillNames = skillEntries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+	const provenanceNames = (await readdir(provenanceDirectory))
+		.filter((name) => name.endsWith(".json"))
+		.map((name) => name.slice(0, -5))
+		.sort();
+	const errors = [];
+
+	for (const name of skillNames) await validateSkill(name, errors);
+	for (const name of provenanceNames) {
+		if (!skillNames.includes(name)) errors.push(`${name}: provenance has no matching skill directory`);
+	}
+
+	if (errors.length > 0) {
+		for (const error of errors) process.stderr.write(`${error}\n`);
+		process.exitCode = 1;
+		return;
+	}
+
+	process.stdout.write(`validated ${skillNames.length} skills\n`);
+}
+
+await main();

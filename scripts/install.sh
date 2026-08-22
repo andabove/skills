@@ -19,6 +19,8 @@ fi
 
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 
+node "$repo_root/scripts/validate.mjs"
+
 if [ "$#" -eq 0 ]; then
 	set -- $(ls "$repo_root/skills")
 fi
@@ -48,7 +50,7 @@ done
 
 node "$repo_root/scripts/update-lock.mjs" \
 	"$target/skills-lock.json" \
-	"$repo_root/provenance.json" \
+	"$repo_root/provenance" \
 	"$@"
 echo "updated skills-lock.json"
 
