@@ -1,0 +1,15 @@
+{
+	"source": "andabove/skills",
+	"skillPath": "skills/unslop/SKILL.md",
+	"upstream": {
+		"repo": "cursor/plugins",
+		"path": "pstack/skills/unslop",
+		"ref": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+		"license": "MIT"
+	},
+	"adapted": [
+		"rewrote description into a branch-listing trigger pointer (copy, marketing/site text, reports, PR descriptions, emails, docs)",
+		"added inline '&above overrides' section: rule 24 (cut hedging) suspended under docs/seo/reports/, docs/seo/reports/aeo/, docs/seo/reports/positioning/; never remove qualification that narrows a claim to the evidence",
+		"added &above dash convention: \" - \" never em dashes, noted as the exception to rule 13's hyphen-as-dash ban"
+	]
+}
