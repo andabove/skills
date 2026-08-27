@@ -1,7 +1,6 @@
 ---
 name: reflect
 description: Run three independent reviews of the active session, surface durable learnings, and route each to a concrete skill edit. Use when the user says reflect.
-disable-model-invocation: true
 ---
 
 # Reflect

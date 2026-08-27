@@ -10,6 +10,7 @@
 	"adapted": [
 		"deleted the 'Companion to how and why' paragraph (those skills are not shipped here)",
 		"reworded step 1's 'Use why step 2' pointer to a plain instruction to pull the PR and commits",
-		"dropped step 4's 'Same rules as why' cross-reference; the rules it pointed at are stated inline"
+		"dropped step 4's 'Same rules as why' cross-reference; the rules it pointed at are stated inline",
+		"removed upstream `disable-model-invocation: true`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first"
 	]
 }

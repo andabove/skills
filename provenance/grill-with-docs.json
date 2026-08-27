@@ -8,6 +8,9 @@
     "license": "MIT"
   },
   "adapted": [
-    "replaced 'call the Skill tool' with runtime-neutral wording that tells the agent to use the grilling and domain-modeling skills together"
+    "replaced 'call the Skill tool' with runtime-neutral wording that tells the agent to use the grilling and domain-modeling skills together",
+    "removed upstream `disable-model-invocation: true`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first",
+    "rewrote the description as a model-facing context pointer with trigger branches, required once the skill is model-invoked",
+    "removed `policy.allow_implicit_invocation: false` from agents/openai.yaml, matching the model-invoked frontmatter"
   ]
 }

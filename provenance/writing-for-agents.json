@@ -7,5 +7,7 @@
     "ref": "5b15a47f2d7150f545fbcacbfe381787fc0230dc",
     "license": "MIT"
   },
-  "adapted": []
+  "adapted": [
+    "added the runtime caveat against user-invocation in SKILL-MECHANICS.md: a typed skill name only reaches the agent where the runtime expands it, so a user-invoked skill fails outright in hosts that do not"
+  ]
 }

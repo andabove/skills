@@ -13,6 +13,7 @@
 		"the review and synthesis steps fall back to manual passes when subagent capability is unavailable",
 		"skill edits go to the canonical source named by repository documentation or its lock file instead of an installed runtime copy",
 		"the invocation section now matches user-only invocation instead of listing automatic trigger cases that cannot load the skill",
-		"references/*.md use runtime-neutral file-read, subagent, shell, search, and connected-tool wording and recognize .claude, .agents, and .cursor skill paths"
+		"references/*.md use runtime-neutral file-read, subagent, shell, search, and connected-tool wording and recognize .claude, .agents, and .cursor skill paths",
+		"removed upstream `disable-model-invocation: true`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first"
 	]
 }
