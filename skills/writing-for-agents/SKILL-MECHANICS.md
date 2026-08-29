@@ -11,6 +11,8 @@ Two choices, trading the two loads:
 
 Pick model-invocation only when the agent must reach the skill on its own, or another skill must. If it only ever fires by hand, make it user-invoked and pay no context load.
 
+One caveat weighs against user-invocation: it only works where the runtime expands a typed skill name into the agent's context before the agent replies. Where it does not (some non-interactive and third-party hosts), the agent has no record that the skill exists and reports it as missing, so every typed call fails. If the skill installs into places you do not control, make it model-invoked.
+
 Shared reference that two user-invoked skills both need can live in neither: with no descriptions, neither can fire the other. Push it to a plain file outside the skill system: external reference any skill can point at.
 
 ## Splitting by invocation

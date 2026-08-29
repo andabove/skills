@@ -9,6 +9,7 @@
 	},
 	"adapted": [
 		"changed reference-mode guidance to cut filler hedging while keeping qualification that limits a claim to its evidence",
-		"kept the delegation pointer to unslop, which ships in this repo"
+		"kept the delegation pointer to unslop, which ships in this repo",
+		"removed upstream `disable-model-invocation: true`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first"
 	]
 }

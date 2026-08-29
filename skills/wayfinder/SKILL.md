@@ -1,7 +1,6 @@
 ---
 name: wayfinder
-description: Plan a huge chunk of work (more than one agent session can hold) as a shared map of decision tickets in the repo's plan docs, and resolve them one at a time until the way to the destination is clear.
-disable-model-invocation: true
+description: "Plan a huge chunk of work (more than one agent session can hold) as a shared map of decision tickets in the repo's plan docs, and resolve them one at a time until the way to the destination is clear. Use for /wayfinder, when an idea is too big or too foggy for one session, or when the user wants a large effort charted before any building starts."
 ---
 
 A loose idea has arrived, too big for one agent session, and wrapped in fog: the way from here to the **destination** isn't visible yet. Wayfinding is about finding that way, not charging at the destination. This skill charts the way as a **shared map** in the repo's plan docs, then works its **decision tickets** (questions whose resolution is a decision, not slices of a build to execute) one at a time until the route is clear.

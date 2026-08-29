@@ -9,6 +9,7 @@
 	},
 	"adapted": [
 		"renamed directory and frontmatter name from principle-prove-it-works to prove-it-works (the principle- prefix only meant something inside the upstream principle list)",
-		"added one line naming typical proofs: project check commands, invariant scripts, and live checks"
+		"added one line naming typical proofs: project check commands, invariant scripts, and live checks",
+		"removed upstream `disable-model-invocation: true`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first"
 	]
 }

@@ -79,8 +79,17 @@ async function validateSkill(name, errors) {
 
 	if (field(metadata, "name") !== name) errors.push(`${name}: frontmatter name does not match directory`);
 	if (!field(metadata, "description")) errors.push(`${name}: missing frontmatter description`);
+	if (/^disable-model-invocation:/m.test(metadata)) errors.push(`${name}: skills must stay model-invoked; remove disable-model-invocation`);
 	if (provenance.source !== "andabove/skills") errors.push(`${name}: provenance source must be andabove/skills`);
 	if (provenance.skillPath !== `skills/${name}/SKILL.md`) errors.push(`${name}: provenance skillPath does not match directory`);
+
+	const agentManifest = join(skillDirectory, "agents", "openai.yaml");
+	if (await pathExists(agentManifest)) {
+		const manifest = await readFile(agentManifest, "utf8");
+		if (/allow_implicit_invocation:\s*false/.test(manifest)) {
+			errors.push(`${name}: skills must stay model-invoked; remove allow_implicit_invocation: false from agents/openai.yaml`);
+		}
+	}
 
 	for (const markdownPath of await markdownFiles(skillDirectory)) {
 		const text = await readFile(markdownPath, "utf8");
