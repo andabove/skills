@@ -83,8 +83,6 @@ async function validateSkill(name, errors) {
 	if (provenance.source !== "andabove/skills") errors.push(`${name}: provenance source must be andabove/skills`);
 	if (provenance.skillPath !== `skills/${name}/SKILL.md`) errors.push(`${name}: provenance skillPath does not match directory`);
 
-	for (const markdownPath of await markdownFiles(skillDirectory)) {
-		const text = await readFile(markdownPath, "utf8");
 	const agentManifest = join(skillDirectory, "agents", "openai.yaml");
 	if (await pathExists(agentManifest)) {
 		const manifest = await readFile(agentManifest, "utf8");
@@ -93,6 +91,8 @@ async function validateSkill(name, errors) {
 		}
 	}
 
+	for (const markdownPath of await markdownFiles(skillDirectory)) {
+		const text = await readFile(markdownPath, "utf8");
 		if (!brandedSkillNames.has(name)) {
 			for (const [label, pattern] of genericSkillForbiddenMarkers) {
 				if (pattern.test(text)) {
