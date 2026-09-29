@@ -8,6 +8,6 @@
     "license": "MIT"
   },
   "adapted": [
-    "no content changes: SKILL.md, LOGIC.md, and UI.md are generic; verified free of Matt-persona references"
+    "gave step 6 a completion criterion: the prototype is done when it answers the question at its top"
   ]
 }

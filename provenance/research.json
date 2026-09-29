@@ -9,6 +9,7 @@
   },
   "adapted": [
     "named the output location: findings go to the consuming repo's docs (docs/research/ or the repo's report convention), defaulting to docs/research/ when no convention exists",
-    "background-agent dispatch now has a current-session fallback for runtimes without subagent capability"
+    "background-agent dispatch now has a current-session fallback for runtimes without subagent capability",
+    "added a completion criterion: every part of the question has an answer with its primary source, or is marked \"not found\" with the sources checked"
   ]
 }

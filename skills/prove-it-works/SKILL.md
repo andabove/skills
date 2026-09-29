@@ -9,8 +9,6 @@ Verify every task output by checking the real thing directly. Do not infer from 
 
 **Why:** Unverified work has unknown correctness. Indirect verification (file mtimes, output freshness, agent self-reports, cached screenshots) feels cheaper than direct observation. Acting on a wrong inference costs far more than checking the source.
 
-**Pattern:** After completing any task, ask: "how do I prove this actually works?"
-
 Typical proofs include the project's check command, an invariant script, or a live check against the running system.
 
 Check the real thing, not a proxy:

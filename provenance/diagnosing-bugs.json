@@ -10,6 +10,8 @@
   "adapted": [
     "repointed the ADR check generically: recorded decisions live in the consuming repo's plan docs (e.g. docs/plans/) or ADRs where it keeps them",
     "folded a stale-state clause into Phase 3 (rank stale state first when the failure appeared without a code change) and a fix-the-pattern-not-the-instance grep clause into Phase 5",
-    "second upstream: the two folded clauses ('suspect stale state before code', 'grep for the pattern, not the instance') derive from cursor/plugins pstack/skills/principle-fix-root-causes (MIT, Copyright (c) 2026 Lauren Tan)"
+    "second upstream: the two folded clauses ('suspect stale state before code', 'grep for the pattern, not the instance') derive from cursor/plugins pstack/skills/principle-fix-root-causes (MIT, Copyright (c) 2026 Lauren Tan)",
+    "dropped the \"Be aggressive. Be creative. Refuse to give up.\" effort prompt from Phase 1; effort is set by the runtime, not by leading words",
+    "Phase 3 puts the ranked hypothesis list in the report and shows it first only when the user is present, instead of pausing on it"
   ]
 }

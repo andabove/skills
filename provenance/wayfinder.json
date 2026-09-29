@@ -16,6 +16,9 @@
     "kept the four runtime skill calls (grilling, domain-modeling, research, prototype); all four ship in this repo; no references to to-tickets, triage, handoff, or to-spec existed upstream",
     "removed upstream `disable-model-invocation: true`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first",
     "rewrote the description as a model-facing context pointer with trigger branches, required once the skill is model-invoked",
-    "removed `policy.allow_implicit_invocation: false` from agents/openai.yaml, matching the model-invoked frontmatter"
+    "removed `policy.allow_implicit_invocation: false` from agents/openai.yaml, matching the model-invoked frontmatter",
+    "resolve at most one HITL ticket per session, with no limit on AFK tickets (research and agent-driven tasks), instead of one ticket per session with a research exception",
+    "when mapping finds no fog, give the route in the reply and stop instead of asking the user how to proceed",
+    "added a step 6 loop back to the frontier and a done line: the session ends when the frontier holds no ticket the agent may take"
   ]
 }
