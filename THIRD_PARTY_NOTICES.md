@@ -6,7 +6,7 @@ Skills in this repository adapted from an upstream carry a `provenance/<name>.js
 
 - Repository: https://github.com/cursor/plugins
 - Path: `pstack/skills`
-- Pinned commit: `46125561306434d8a1d7745d540d8932ab0cd2a2`
+- Pinned commit: `adf3218ca2f5b9971eedc07a76bef22df7701539`
 - Licence file: `pstack/LICENSE`
 
 ```
@@ -36,7 +36,7 @@ SOFTWARE.
 ## mattpocock/skills
 
 - Repository: https://github.com/mattpocock/skills
-- Pinned commit: `5b15a47f2d7150f545fbcacbfe381787fc0230dc`
+- Pinned commit: `c55ee46073ed923f86ce59a5eb3b6d895095d1b7`
 - Licence file: `LICENSE`
 
 ```

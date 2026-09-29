@@ -4,15 +4,15 @@
 	"upstream": {
 		"repo": "cursor/plugins",
 		"path": "pstack/skills/show-me-your-work",
-		"ref": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+		"ref": "adf3218ca2f5b9971eedc07a76bef22df7701539",
 		"license": "MIT"
 	},
 	"adapted": [
 		"transcript audit uses the active runtime's current-session API or store, with active-context fallback and a no-cross-session boundary",
 		"cross-model review selects from the runtime's available models and has explicit same-model and no-subagent fallbacks",
 		"local log placement now requires an ignored repository work-artifact path when available",
-		"the final audit appends correction rows instead of conflicting with the append-only history rule",
 		"kept references/decision-log-template.tsv and scripts/log.sh verbatim",
-		"removed upstream `disable-model-invocation: true`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first"
+		"removed upstream `disable-model-invocation: true`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first",
+		"the rules keep \"so a reviewer can re-run it\" instead of upstream's pointer to the encode-lessons-in-structure skill, which is not shipped here"
 	]
 }

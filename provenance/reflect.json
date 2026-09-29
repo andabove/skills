@@ -4,7 +4,7 @@
 	"upstream": {
 		"repo": "cursor/plugins",
 		"path": "pstack/skills/reflect",
-		"ref": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+		"ref": "adf3218ca2f5b9971eedc07a76bef22df7701539",
 		"license": "MIT"
 	},
 	"adapted": [
@@ -14,6 +14,7 @@
 		"skill edits go to the canonical source named by repository documentation or its lock file instead of an installed runtime copy",
 		"the invocation section now matches user-only invocation instead of listing automatic trigger cases that cannot load the skill",
 		"references/*.md use runtime-neutral file-read, subagent, shell, search, and connected-tool wording and recognize .claude, .agents, and .cursor skill paths",
-		"removed upstream `disable-model-invocation: true`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first"
+		"removed upstream `disable-model-invocation: true`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first",
+		"step 4 drops upstream's pointer to the encode-lessons-in-structure skill, which is not shipped here"
 	]
 }
