@@ -28,7 +28,7 @@ one piece got to, this says whether the project lands.
 - [The thing that is waiting on a person rather than on code]
 ```
 
-Drop `Needs a decision` when nothing is waiting. Say so in the first line instead.
+Drop `Needs a decision` when nothing is waiting.
 
 ## Rules
 

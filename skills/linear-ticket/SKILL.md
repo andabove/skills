@@ -9,7 +9,7 @@ A ticket is read by someone who was not in the conversation. Write for them.
 
 ## The shape
 
-Six parts, in this order. Nothing else.
+Five parts, in this order. Nothing else.
 
 ```markdown
 **As a** [who] **I want** [what] **so that** [why].
@@ -29,7 +29,7 @@ Six parts, in this order. Nothing else.
 - [The thing a reader will assume is included and is not]
 ```
 
-Drop `Out of scope` when nothing is likely to be assumed. Never drop the other five.
+Drop `Out of scope` when nothing is likely to be assumed. Never drop the other four.
 
 ## Rules
 

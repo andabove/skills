@@ -7,9 +7,9 @@ const skillsDirectory = join(repositoryRoot, "skills");
 const provenanceDirectory = join(repositoryRoot, "provenance");
 const brandedSkillNames = new Set(["linear-comment", "linear-status-update", "linear-ticket"]);
 const genericSkillForbiddenMarkers = [
-	["&above brand reference", /&above|\bandabove\b/i],
-	["web repository path", /\b(?:apps\/marketing|content\/andabove|docs\/seo|packages\/(?:content-schema|glass|particles))(?:\/|\b)/i],
-	["web repository command", /\bpnpm\s+--filter\s+marketing\b/i],
+	["&above brand reference", /&above|\bandabove\b/i, true],
+	["web repository path", /\b(?:apps\/marketing|content\/andabove|docs\/seo|packages\/(?:content-schema|glass|particles))(?:\/|\b)/i, false],
+	["web repository command", /\bpnpm\s+--filter\s+marketing\b/i, false],
 ];
 
 async function readJson(path) {
@@ -93,11 +93,10 @@ async function validateSkill(name, errors) {
 
 	for (const markdownPath of await markdownFiles(skillDirectory)) {
 		const text = await readFile(markdownPath, "utf8");
-		if (!brandedSkillNames.has(name)) {
-			for (const [label, pattern] of genericSkillForbiddenMarkers) {
-				if (pattern.test(text)) {
-					errors.push(`${relative(repositoryRoot, markdownPath)}: generic skill contains ${label}`);
-				}
+		for (const [label, pattern, brandExempt] of genericSkillForbiddenMarkers) {
+			if (brandExempt && brandedSkillNames.has(name)) continue;
+			if (pattern.test(text)) {
+				errors.push(`${relative(repositoryRoot, markdownPath)}: skill contains ${label}`);
 			}
 		}
 		for (const target of localLinks(text)) {
