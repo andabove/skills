@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const skillsDirectory = join(repositoryRoot, "skills");
 const provenanceDirectory = join(repositoryRoot, "provenance");
-const brandedSkillNames = new Set();
+const brandedSkillNames = new Set(["linear-comment", "linear-status-update", "linear-ticket"]);
 const genericSkillForbiddenMarkers = [
 	["&above brand reference", /&above|\bandabove\b/i],
 	["web repository path", /\b(?:apps\/marketing|content\/andabove|docs\/seo|packages\/(?:content-schema|glass|particles))(?:\/|\b)/i],
