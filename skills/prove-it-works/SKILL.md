@@ -9,8 +9,6 @@ Verify every task output by checking the real thing directly. Do not infer from 
 
 **Why:** Unverified work has unknown correctness. Indirect verification (file mtimes, output freshness, agent self-reports, cached screenshots) feels cheaper than direct observation. Acting on a wrong inference costs far more than checking the source.
 
-**Pattern:** After completing any task, ask: "how do I prove this actually works?"
-
 Typical proofs include the project's check command, an invariant script, or a live check against the running system.
 
 Check the real thing, not a proxy:
@@ -29,6 +27,6 @@ When verifying delegated work, inspect the actual output artifact (git diff, fil
 
 ## Script the check when you can
 
-The strongest proof is a deterministic script that re-runs the same comparison, not a one-time eyeball. Write the script, run it, and keep its output as an artifact a reviewer can re-run instead of trusting your word. A script comparing the old and new compiled output catches what a glance misses.
+The strongest proof is a deterministic script that re-runs the same comparison, not a one-time eyeball. Write the script, run it, and keep its output as an artifact a reviewer can re-run instead of trusting your word.
 
-Keep the artifact visible for the human. Commit it only for large or complex work where the trail has to be auditable later, like a big port or migration (the **show-me-your-work** skill). Most work just needs it visible, not committed.
+Keep the artifact visible for the human. Commit it only for large or complex work where the trail has to be auditable later, like a big port or migration (the **show-me-your-work** skill).

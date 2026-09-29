@@ -4,12 +4,15 @@
 	"upstream": {
 		"repo": "cursor/plugins",
 		"path": "pstack/skills/technical-writing",
-		"ref": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+		"ref": "adf3218ca2f5b9971eedc07a76bef22df7701539",
 		"license": "MIT"
 	},
 	"adapted": [
 		"changed reference-mode guidance to cut filler hedging while keeping qualification that limits a claim to its evidence",
 		"kept the delegation pointer to unslop, which ships in this repo",
-		"removed upstream `disable-model-invocation: true`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first"
+		"removed upstream `disable-model-invocation: true`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first",
+		"dropped \"commit messages\" from the description and the PR-description bullet; the commit-messages skill owns commit text",
+		"the PR-body bullet says \"run logs\" where upstream says \"swarm logs\", which names a pstack skill not shipped here",
+		"kept the Review checklist, which upstream cut after the pin: it is the completion criterion for the skill's review mode"
 	]
 }

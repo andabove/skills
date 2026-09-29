@@ -4,11 +4,14 @@
 	"upstream": {
 		"repo": "cursor/plugins",
 		"path": "pstack/skills/unslop",
-		"ref": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+		"ref": "adf3218ca2f5b9971eedc07a76bef22df7701539",
 		"license": "MIT"
 	},
 	"adapted": [
 		"rewrote description into a branch-listing trigger pointer (copy, marketing/site text, reports, PR descriptions, emails, docs)",
-		"changed rule 24 to cut filler uncertainty while keeping qualification that limits a claim to its evidence"
+		"changed rule 24 to cut filler uncertainty while keeping qualification that limits a claim to its evidence",
+		"kept rules 1, 2, 4, 6 and 21 (puffery, name-dropping, promotional language, formulaic challenges, cutoff disclaimers), which upstream deleted after the pin: the description targets marketing and site text, where those are the main tells",
+		"kept the model-invoked description; upstream later added `disable-model-invocation: true` and a \"Must always apply\" description",
+		"kept the self-audit step (now step 3), which upstream cut with the soul section: it is the skill's completion check"
 	]
 }

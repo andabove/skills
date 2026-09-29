@@ -19,8 +19,6 @@ If the redacted output is not enough to diagnose the bug, say so and ask the use
 
 **This is the skill.** Everything else is mechanical. If you have a **tight** pass/fail signal for the bug (one that goes red on _this_ bug), you will find the cause; bisection, hypothesis-testing, and instrumentation all just consume it. If you don't have one, no amount of staring at code will save you.
 
-Spend disproportionate effort here. **Be aggressive. Be creative. Refuse to give up.**
-
 ### Ways to construct one, in roughly this order
 
 1. **Failing test** at whatever seam reaches the bug: unit, integration, e2e.
@@ -97,7 +95,7 @@ Each hypothesis must be **falsifiable**: state the prediction it makes.
 
 If you cannot state the prediction, the hypothesis is a vibe: discard or sharpen it.
 
-**Show the ranked list to the user before testing.** They often have domain knowledge that re-ranks instantly ("we just deployed a change to #3"), or know hypotheses they've already ruled out. Cheap checkpoint, big time saver. Don't block on it; proceed with your ranking if the user is AFK.
+**Put the ranked list in your report; if the user is present, show it before testing.** They often have domain knowledge that re-ranks instantly ("we just deployed a change to #3"), or know hypotheses they've already ruled out. Proceed with your ranking without waiting for an answer.
 
 ## Phase 4: Instrument
 

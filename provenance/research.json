@@ -4,11 +4,12 @@
   "upstream": {
     "repo": "mattpocock/skills",
     "path": "skills/engineering/research",
-    "ref": "5b15a47f2d7150f545fbcacbfe381787fc0230dc",
+    "ref": "c55ee46073ed923f86ce59a5eb3b6d895095d1b7",
     "license": "MIT"
   },
   "adapted": [
     "named the output location: findings go to the consuming repo's docs (docs/research/ or the repo's report convention), defaulting to docs/research/ when no convention exists",
-    "background-agent dispatch now has a current-session fallback for runtimes without subagent capability"
+    "background-agent dispatch now has a current-session fallback for runtimes without subagent capability",
+    "added a completion criterion: every part of the question has an answer with its primary source, or is marked \"not found\" with the sources checked"
   ]
 }

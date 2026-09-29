@@ -103,14 +103,14 @@ Ruling something out of scope is a scoping act, not a step on the route. When a 
 
 ## Invocation
 
-Two modes. Either way, **never resolve more than one ticket per session**, with the exception of research tickets.
+Two modes. Either way, **resolve at most one HITL ticket per session**. AFK tickets (research, and tasks the agent drives alone) have no limit.
 
 ### Chart the map
 
 User invokes with a loose idea.
 
 1. **Name the destination.** Use the `grilling` and `domain-modeling` skills together to pin down what this map is finding its way to: the spec, decision, or change. The destination fixes the scope, so it's settled first.
-2. **Map the frontier.** Grill again, **breadth-first** this time: fan out across the whole space rather than deep on any one thread, surfacing the open decisions and the first steps takeable now. **If this surfaces no fog** (the way to the destination is already clear, the whole journey small enough for one session), you don't need a map. Stop and ask the user how they'd like to proceed.
+2. **Map the frontier.** Grill again, **breadth-first** this time: fan out across the whole space rather than deep on any one thread, surfacing the open decisions and the first steps takeable now. **If this surfaces no fog** (the way to the destination is already clear, the whole journey small enough for one session), you don't need a map. Say so, give the route in your reply instead of a map, and stop.
 3. **Create the map file** at `docs/plans/<effort>/map.md` (or the repo's plan-doc location): Destination and Notes filled in, Decisions-so-far empty, the fog sketched into **Not yet specified**.
 4. **Create the tickets you can specify now** under `tickets/`, then wire the `Blocked by:` lines. Wiring sorts them into the frontier and the blocked; everything you can't yet specify stays in the fog: the **Not yet specified** section.
 5. **Start the research work.** If subagents are available, run each new `research` ticket in parallel with the `research` skill and link each findings file from its ticket. If subagents are unavailable, leave those tickets open and call out that limitation to the user.
@@ -125,5 +125,6 @@ User invokes with a map (path or effort name). A ticket is **optional**: without
 3. Resolve it. **Zoom as needed**: read the full body of any related or resolved ticket on demand; use whichever skills the `## Notes` block names. If in doubt, use the `grilling` and `domain-modeling` skills together.
 4. Record the resolution: append the answer to the ticket under an `## Answer` heading, set `Status: resolved`, and **append a context pointer** to the map's Decisions-so-far.
 5. Add newly-surfaced tickets (create, then wire `Blocked by:`); graduate any fog the answer has made specifiable, clearing each graduated patch from **Not yet specified** so it lives only as its new ticket. If the answer reveals that a ticket (this one or another) sits beyond the destination, **rule it out of scope** rather than resolving it on the route. If the decision invalidates other parts of the map, update or delete those tickets.
+6. Go back to step 2 for the next frontier ticket, skipping any HITL ticket once you have resolved one this session. The session is done when the frontier holds no ticket you may take.
 
 The user may run unblocked tickets in parallel, so expect other sessions to be editing the map and tickets concurrently.
