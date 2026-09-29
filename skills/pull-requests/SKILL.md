@@ -26,7 +26,7 @@ Open a pull request only when the user asks for one.
 1. **Find the base branch.** Use the repository docs or the target branch that the environment gives. Otherwise, use the default branch.
 2. **Read the whole change:** `git log --no-merges <base>..HEAD` and `git diff <base>...HEAD`. Done when you can name, for each commit, the Summary sentence that covers it.
 3. **Write the title** in the form of the `commit-messages` skill. If one title cannot cover the branch, tell the user that the branch holds more than one change.
-4. **Gather the [evidence](#evidence).** Run each command on the branch HEAD. Output from before the last commit does not count.
+4. **Gather the [evidence](#evidence).** Run each "after" command and each check on the branch HEAD. Output from before the last commit does not count. Run a "before" command on a checkout without the change, such as a worktree at the base branch, and name that commit.
 5. **Run the `blast-radius` skill** on the diff, for the [merge danger](#merge-danger).
 6. **Write the body** from the [template](#template) to a file. Done when every slot holds real content and no `<…>` placeholder is left.
 7. **Push the branch and open the pull request:**
@@ -72,7 +72,7 @@ Start with one to three sentences that say what changes and why. Then pick the s
 
 ## Evidence
 
-Evidence is proof from a run on the branch HEAD. Use the strongest proof that fits the change, in this order:
+Evidence is proof from a run: the "after" run and the checks on the branch HEAD, and the "before" run on a checkout without the change. Use the strongest proof that fits the change, in this order:
 
 1. **For a visible change, screenshots before and after.** Use the repository's browser proof if it has one. `gh` cannot upload images, so put the text output of the run in the body, list the screenshot paths under it, and ask the user to drag the images into the pull request.
 2. **For a behaviour change, a test that fails before and passes after.** Give the test file, the test name, the failure line from the run before the change and the pass line after it. For a bug fix, the "before" run is the test on the code without the fix.
