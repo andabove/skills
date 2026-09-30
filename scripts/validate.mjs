@@ -5,11 +5,11 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const skillsDirectory = join(repositoryRoot, "skills");
 const provenanceDirectory = join(repositoryRoot, "provenance");
-const brandedSkillNames = new Set(["linear-comment", "linear-status-update", "linear-ticket"]);
+const brandedSkillNames = new Set();
 const genericSkillForbiddenMarkers = [
-	["&above brand reference", /&above|\bandabove\b/i, true],
-	["web repository path", /\b(?:apps\/marketing|content\/andabove|docs\/seo|packages\/(?:content-schema|glass|particles))(?:\/|\b)/i, false],
-	["web repository command", /\bpnpm\s+--filter\s+marketing\b/i, false],
+	["&above brand reference", /&above|\bandabove\b/i],
+	["web repository path", /\b(?:apps\/marketing|content\/andabove|docs\/seo|packages\/(?:content-schema|glass|particles))(?:\/|\b)/i],
+	["web repository command", /\bpnpm\s+--filter\s+marketing\b/i],
 ];
 
 async function readJson(path) {
@@ -93,10 +93,11 @@ async function validateSkill(name, errors) {
 
 	for (const markdownPath of await markdownFiles(skillDirectory)) {
 		const text = await readFile(markdownPath, "utf8");
-		for (const [label, pattern, brandExempt] of genericSkillForbiddenMarkers) {
-			if (brandExempt && brandedSkillNames.has(name)) continue;
-			if (pattern.test(text)) {
-				errors.push(`${relative(repositoryRoot, markdownPath)}: skill contains ${label}`);
+		if (!brandedSkillNames.has(name)) {
+			for (const [label, pattern] of genericSkillForbiddenMarkers) {
+				if (pattern.test(text)) {
+					errors.push(`${relative(repositoryRoot, markdownPath)}: generic skill contains ${label}`);
+				}
 			}
 		}
 		for (const target of localLinks(text)) {
@@ -119,6 +120,20 @@ async function main() {
 	for (const name of skillNames) await validateSkill(name, errors);
 	for (const name of provenanceNames) {
 		if (!skillNames.includes(name)) errors.push(`${name}: provenance has no matching skill directory`);
+	}
+
+	const referenceCopies = new Map();
+	for (const name of skillNames) {
+		const referencesDirectory = join(skillsDirectory, name, "references");
+		if (!(await pathExists(referencesDirectory))) continue;
+		for (const file of await readdir(referencesDirectory)) {
+			const text = await readFile(join(referencesDirectory, file), "utf8");
+			const first = referenceCopies.get(file);
+			if (!first) referenceCopies.set(file, { name, text });
+			else if (first.text !== text) {
+				errors.push(`${name}: references/${file} differs from the copy in ${first.name}; shared references must stay identical`);
+			}
+		}
 	}
 
 	if (errors.length > 0) {
