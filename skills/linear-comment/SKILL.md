@@ -8,8 +8,8 @@ description: Write a comment on a Linear issue as a status record against its ac
 A comment is read by someone catching up on the ticket. It is not a reply to the person
 who asked you. Write the update, not the conversation.
 
-Pairs with the `linear-ticket` skill: the description says what is being built, the
-comment says where it got to.
+The ticket description, written with the `linear-ticket` skill, says what is being built.
+The comment says where it got to.
 
 ## The shape
 
@@ -36,23 +36,23 @@ Drop `Gaps` when there are none. Say so in the first line instead.
 **Quote the criteria from the ticket.** Not a summary of them. A reader should be able to
 tick boxes against the description without translating.
 
-**Ticked means demonstrated.** If it is met but unverified, leave it unticked and say what
-would verify it. A tick nobody has seen fail is not evidence.
+**Tick only what was demonstrated.** If a criterion is met but unverified, leave it
+unticked and say what would verify it.
 
-**No second person.** "Review and send when you are happy with it" is a message to one
-person; the next reader does not know who or what. Write "Drafted, not filed. Needs a
-reviewer before it goes." Same fact, addressed to the ticket.
+**Address the ticket, not a person.** "Review and send when you are happy with it" is a
+message to one person, and the next reader does not know who or what. "Drafted, not filed.
+Needs a reviewer before it goes." states the same fact to anyone who reads the ticket.
 
-**No conversation artefacts.** "So what is left is", "One correction:", "Re-verified"
-without saying against what. These are turns in a dialogue, and the dialogue is not on the
-ticket.
+**Write the record, not the dialogue.** Phrases like "So what is left is", "One
+correction:" and "Re-verified" without saying against what are turns in a conversation the
+reader never saw.
 
 **Corrections are stated once, plainly.** "An earlier comment said X; that was wrong
 because Y." Not a running account of how the understanding changed.
 
 **Link, do not restate.** The pull request, the file, the sibling ticket.
 
-**Plain words. No em dashes.**
+**Plain words, with commas and full stops where an em dash might go.**
 
 ## Anti-patterns
 

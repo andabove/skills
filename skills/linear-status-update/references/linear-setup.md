@@ -1,12 +1,12 @@
 # Linear setup
 
-The Linear skills follow a `## Linear` section in the repository's agent instructions:
-`AGENTS.md` at the repository root, or `CLAUDE.md` when there is no `AGENTS.md`. Run these
+The Linear skills follow a `## Linear` section in the repository's agent instructions,
+which are `AGENTS.md` at the repository root, or `CLAUDE.md` when there is no `AGENTS.md`. Run these
 steps when that section is missing, then return to the task that sent you here.
 
 The section records what the team has: its team, projects, estimate scale, and labels. The
-skills decide how to use them. Earlier tickets show what exists, not how to write the next
-one, so copy nothing from their style.
+skills decide how to use them. Earlier tickets show which options exist. Write new tickets
+to the skills' rules, however the earlier ones were written.
 
 1. **Ask which project.** List the Linear projects and ask the user which one this
    repository's work is filed under. Propose the project's lead team as the team, and
@@ -34,7 +34,7 @@ one, so copy nothing from their style.
 - Repository label: [this repository's label from a repository label group].
 ```
 
-Statuses stay out of the section because they change: the skills read them fresh each time.
+Statuses stay out of the section because they change. The skills read them fresh each time.
 
 Keep a line and write "Not used" when the team does not have something, so a reader can
 tell a deliberate gap from a section that was never set up.

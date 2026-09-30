@@ -39,16 +39,16 @@ Drop `Out of scope` when nothing is likely to be assumed. Never drop the other f
 to decide true or false. "Onboarding works" is not a criterion. "A new member receives a
 DM within 10 minutes of being added" is.
 
-**No rationale.** Not why the approach was chosen, not what was rejected, not what went
-wrong last time. That belongs in the PR, the commit message and the code comments, where
-the people it helps are already reading. A stakeholder scanning fifteen tickets needs to
-know what changes and how to check it.
+**Say what changes and how to check it.** Why an approach was chosen, what was rejected,
+and what went wrong before belong in the PR, the commit message and the code comments,
+where the people they help already read. A stakeholder scanning fifteen tickets needs only
+the change and the check.
 
 **Link, don't restate.** Point at the PR, the file, the sibling ticket. Do not summarise
 them.
 
-**Plain words.** No em dashes. No "the whole point is". No paragraph that argues with
-itself. Write the sentence a colleague would say out loud.
+**Plain words.** Write the sentence a colleague would say out loud, with commas and full
+stops where an em dash might go.
 
 **Title is a sentence about the outcome**, not a component name. "A new member is greeted
 within 10 minutes" beats "Onboarding queue drain".
@@ -67,8 +67,8 @@ within 10 minutes" beats "Onboarding queue drain".
 
 **Rewriting an existing ticket is editorial, not a scope decision.** Diff the meaning as
 well as the prose. A house-style rewrite that narrows, widens, or inverts what is being
-asked for is a different ticket wearing the same number, and the person who filed it will
-not reread it to catch you. When the meaning moves, confirm with them before saving.
+asked for turns it into a different ticket under the same number, and the person who
+filed it will not reread it to catch the change. When the meaning moves, confirm with them before saving.
 
 Read it back and ask: could someone who was not in this conversation pick this up, build
 it, and know when they were done? If the answer needs a follow-up question, fix the
@@ -96,4 +96,4 @@ has to come back and ask.
   sub-issue with `parentId`. When it must land before or after another issue, set `blocks`
   or `blockedBy`.
 
-Leave milestone and cycle unset: those are the team's planning.
+Leave milestone and cycle unset, because the team plans those.
