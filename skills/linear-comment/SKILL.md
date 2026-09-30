@@ -71,8 +71,7 @@ blocked, or needs them? If not, rewrite it before anything else.
 
 ## Filing it
 
-Post with `save_comment` on the issue, using `issueId`. Follow the house rules in the
-`## Linear` section of the repository's agent instructions, if there is one.
+Post with `save_comment` on the issue, using `issueId`.
 
 **Every comment sets the status.** List the issue's team statuses each time, because they
 change, and move the issue to the one that matches the first line, which is the reason for

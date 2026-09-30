@@ -76,17 +76,24 @@ ticket, not the answer.
 
 ## Filing it
 
-Follow the `## Linear` section of the repository's agent instructions for the team,
-project, estimate, priority, labels, sub-issues, and blocking. Its house rules win over
-this skill's rules. If there is no such section, run [the setup](references/linear-setup.md)
-first.
+Take the team, project, estimate scale, and labels from the `## Linear` section of the
+repository's agent instructions. If there is no such section, run
+[the setup](references/linear-setup.md) first. The section says what the team has; this
+skill says how to use it, whatever earlier tickets did.
 
-Use the Linear MCP tools. Always set `team` and `project`: an issue without a project is
-orphaned. Pick the project by the product the work is in, not the kind of work.
+Use the Linear MCP tools and set every field below. An unset field is a question someone
+has to come back and ask.
 
-**Always set a status.** List the team's statuses each time, because they change, and pick
-the one that matches where the work is. Tell the user which status you chose and why.
+- **Team and project.** An issue without a project is orphaned. Pick the project by the
+  product the work is in, not the kind of work.
+- **Status.** List the team's statuses each time, because they change, and pick the one
+  that matches where the work is. Tell the user which status you chose and why.
+- **Priority.** From the impact in Context: Urgent when something is broken for users now,
+  High when it blocks other work, Low for polish, Medium otherwise.
+- **Estimate.** From the team's scale, when it has one.
+- **Labels.** One type label, plus the repository label when there is one.
+- **Parent and order.** When the work belongs to an existing parent issue, file it as a
+  sub-issue with `parentId`. When it must land before or after another issue, set `blocks`
+  or `blockedBy`.
 
-**Nest under a parent, never schedule.** When the work belongs to an existing parent issue,
-file it as a sub-issue with `parentId`. Leave milestone and cycle unset: those are the
-team's planning.
+Leave milestone and cycle unset: those are the team's planning.
