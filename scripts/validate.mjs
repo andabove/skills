@@ -122,6 +122,20 @@ async function main() {
 		if (!skillNames.includes(name)) errors.push(`${name}: provenance has no matching skill directory`);
 	}
 
+	const referenceCopies = new Map();
+	for (const name of skillNames) {
+		const referencesDirectory = join(skillsDirectory, name, "references");
+		if (!(await pathExists(referencesDirectory))) continue;
+		for (const file of await readdir(referencesDirectory)) {
+			const text = await readFile(join(referencesDirectory, file), "utf8");
+			const first = referenceCopies.get(file);
+			if (!first) referenceCopies.set(file, { name, text });
+			else if (first.text !== text) {
+				errors.push(`${name}: references/${file} differs from the copy in ${first.name}; shared references must stay identical`);
+			}
+		}
+	}
+
 	if (errors.length > 0) {
 		for (const error of errors) process.stderr.write(`${error}\n`);
 		process.exitCode = 1;
