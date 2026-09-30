@@ -1,6 +1,6 @@
 ---
 name: linear-comment
-description: Write a comment on a ticket as a status record against its acceptance criteria and QA notes. Use when reporting progress, handing work to QA, recording a decision or a gap, or when a comment reads like a chat reply rather than something a stakeholder can act on.
+description: Write a comment on a Linear issue as a status record against its acceptance criteria and QA notes. Use when reporting progress, handing work to QA, recording a decision or a gap, or when a comment reads like a chat reply rather than something a stakeholder can act on.
 ---
 
 # Linear comment
@@ -61,10 +61,20 @@ because Y." Not a running account of how the understanding changed.
 | "Step 2 is done; step 1 is drafted, not filed" | "Blocked on an upstream issue that is drafted and not filed" |
 | "Review and send when you are happy" | "Needs a reviewer before it is filed" |
 | Three paragraphs on why the workaround is awkward | One gap line, and the detail in the linked draft |
-| "Re-verified against the installed 0.47.6" | "Checked against eve 0.47.6: [what changed, or nothing did]" |
+| "Re-verified against the installed version" | "Checked against [package] [version]: [what changed, or that nothing did]" |
 | A wall of type signatures | The file and line, once |
 
 ## Before you save
 
 Read the first line alone. Does it tell someone scanning the ticket whether this is done,
 blocked, or needs them? If not, rewrite it before anything else.
+
+## Filing it
+
+Post with `save_comment` on the issue, using `issueId`. Follow the house rules in the
+`## Linear` section of the repository's agent instructions, if there is one.
+
+**Every comment sets the status.** List the issue's team statuses each time, because they
+change, and move the issue to the one that matches the first line, which is the reason for
+it. When the comment hands work to QA and the team has no QA status, pick the nearest one
+and name in the comment who should test it.

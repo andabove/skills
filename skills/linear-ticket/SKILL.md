@@ -1,6 +1,6 @@
 ---
 name: linear-ticket
-description: Write or rewrite a Linear ticket for the &above workspace as a short user story with testable acceptance criteria and QA notes. Use when filing a ticket, creating a follow-up, or when an existing ticket is too long or unclear for a stakeholder to follow.
+description: Write or rewrite a Linear ticket as a short user story with testable acceptance criteria and QA notes. Use when filing a ticket, creating a follow-up, or when an existing ticket is too long or unclear for a stakeholder to follow.
 ---
 
 # Linear ticket
@@ -59,29 +59,9 @@ within 10 minutes" beats "Onboarding queue drain".
 |---|---|
 | Three paragraphs on why the old design was wrong | One line in Context: what is true today |
 | A table comparing options you rejected | Nothing. It is a PR concern |
-| "Refusing to guess: picking a tenant here would file…" | "Fails with a clear error when the tenant is unknown" |
+| "Refusing to guess: picking an account here would file…" | "Fails with a clear error when the account is unknown" |
 | Quoting code comments at length | A file path |
 | Criteria like "the seam is documented" | "A reviewer can find X at Y" |
-
-## Before you file
-
-**Check the defect is still a defect.** Against the *current published* version, not the
-one this repository pins: a bug report written from a pinned version can be months of
-releases behind, and the fix may already be in the changelog. Unpack the published package
-and read the code rather than trusting either the docs or a comment claiming a capability
-is missing.
-
-**If the evidence shows the fix is in reach, ship the fix.** Gathering proof for a ticket
-often turns up the answer; when it does, the ticket is the more expensive output. File one
-only for what you are not going to do now.
-
-## Filing it
-
-Use the Linear MCP tools. Always set `team` and `project` — an issue without a project is
-orphaned. Pick the project by the product the work is in, not the kind of work.
-
-Check `~/.claude/docs/agents/issue-tracker.md` for this workspace's conventions: statuses,
-labels, blocking edges, and which project is which.
 
 ## Before you save
 
@@ -93,3 +73,20 @@ not reread it to catch you. When the meaning moves, confirm with them before sav
 Read it back and ask: could someone who was not in this conversation pick this up, build
 it, and know when they were done? If the answer needs a follow-up question, fix the
 ticket, not the answer.
+
+## Filing it
+
+Follow the `## Linear` section of the repository's agent instructions for the team,
+project, estimate, priority, labels, sub-issues, and blocking. Its house rules win over
+this skill's rules. If there is no such section, run [the setup](references/linear-setup.md)
+first.
+
+Use the Linear MCP tools. Always set `team` and `project`: an issue without a project is
+orphaned. Pick the project by the product the work is in, not the kind of work.
+
+**Always set a status.** List the team's statuses each time, because they change, and pick
+the one that matches where the work is. Tell the user which status you chose and why.
+
+**Nest under a parent, never schedule.** When the work belongs to an existing parent issue,
+file it as a sub-issue with `parentId`. Leave milestone and cycle unset: those are the
+team's planning.
