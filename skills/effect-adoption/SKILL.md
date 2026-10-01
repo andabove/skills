@@ -90,6 +90,7 @@ export async function loadInvoice(
 - **Keep the error contract the tests assert.** Here the old code threw `InvoiceLoadError` with the fault as `cause`. The tagged error keeps the same `name`, `message` and `cause`, so the old assertions still pass.
 - **Keep the program unexported** until a caller also moves to Effect. Then that caller can import the program and compose it, and the edge stays for the remaining Promise callers.
 - **Build a layer once, not per call.** When the program needs services, build them once with `ManagedRuntime.make(layer)` at module level and call `runtime.runPromiseExit(program, { signal })`. `Effect.provide(layer)` inside the edge builds the layer again on every call. See `skill:effect-services`.
+- **Give that runtime an owner that disposes it.** The runtime holds its resources until `await runtime.dispose()` runs: no release happens before it. Name the code that owns the runtime, and call `dispose()` in the application's shutdown hook and in test teardown (`afterAll`). A run started after `dispose()` fails.
 
 The full module before and after, with its test file and the four breaks, is in [references/effect-adoption-worked-example.md](references/effect-adoption-worked-example.md).
 
@@ -129,10 +130,12 @@ Import each module from its subpath, `effect/Effect`, not from the `effect` inde
 ```ts
 import * as Effect from "effect/Effect"
 import * as Schedule from "effect/Schedule"
-import { TestClock } from "effect/testing"
+import * as TestClock from "effect/testing/TestClock"
 ```
 
-Ban the index with ESLint's `no-restricted-imports`. The rule matches the exact name `effect`, so subpaths and `effect/testing` pass. It also flags `import type` from the index; write type imports from subpaths too.
+Import test modules by module too: `effect/testing` is itself a small index, and it loads 130 modules against 68 for `effect/testing/TestClock`.
+
+Ban the index with ESLint's `no-restricted-imports`. The rule matches the exact name `effect`, so every subpath passes. It also flags `import type` from the index; write type imports from subpaths too.
 
 ```js
 // eslint.config.js
