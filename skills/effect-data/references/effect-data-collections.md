@@ -4,7 +4,7 @@ Checked against `effect 4.0.0`. Read `node_modules/effect/src/<Module>.ts` when 
 
 ## Arrays first
 
-Most Effect code uses `ReadonlyArray<A>` with the `Array` module, imported as `Arr`. It is data-first and data-last, and never mutates its input.
+Most Effect code uses `ReadonlyArray<A>` with the `Array` module, imported as `Arr` (`import * as Arr from "effect/Array"`). It is data-first and data-last, and never mutates its input.
 
 | Need | Use |
 | --- | --- |
@@ -30,7 +30,8 @@ Most Effect code uses `ReadonlyArray<A>` with the `Array` module, imported as `A
 Immutable. Keys and elements compare with `Equal.equals`, so structurally equal objects are one key.
 
 ```ts
-import { HashMap, Option } from "effect"
+import * as HashMap from "effect/HashMap"
+import * as Option from "effect/Option"
 
 type Tally = HashMap.HashMap<string, number>
 
@@ -60,7 +61,8 @@ Same structural keys, mutated in place: `MutableHashMap.set(map, key, value)`, `
 ## BigDecimal
 
 ```ts
-import { BigDecimal, Option } from "effect"
+import * as BigDecimal from "effect/BigDecimal"
+import * as Option from "effect/Option"
 
 const price = BigDecimal.fromStringUnsafe("19.99")
 const vat = BigDecimal.fromStringUnsafe("0.21")

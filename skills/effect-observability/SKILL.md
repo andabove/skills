@@ -7,12 +7,14 @@ description: Effect 4 logging, tracing and metrics, and their export. Use when a
 
 Checked against `effect 4.0.0` and `@effect/opentelemetry 4.0.0`. When the project has a newer version, read `node_modules/effect/src/Logger.ts`, `Tracer.ts`, `Metric.ts`, `References.ts` and `node_modules/effect/src/observability/`, and `node_modules/effect/AGENTS.md`, before you trust a name here.
 
+Import each module from its own subpath, as every example here does: `import * as Logger from "effect/Logger"`, `import * as Otlp from "effect/observability/Otlp"`, `import * as OtelTracer from "@effect/opentelemetry/OtelTracer"`.
+
 Instrument with Effect APIs in every module. Choose where the telemetry goes once, at the entry point, with one layer. The signals share context: a log written inside a span becomes an event on that span, and a logger can read the current trace and span ids.
 
 ## Logging
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 
 declare const chargeCard: (orderId: string, cents: number) => Effect.Effect<string, "CardDeclined">
 
@@ -60,7 +62,11 @@ A logger receives every entry at or above the minimum level. The default set hol
 When the project already ships a logger such as pino or winston, with its transports, redaction and log shipping, keep it as the one sink. Replace Effect's default logger with a bridge that maps level, message, annotations, log spans, cause and trace ids onto the project logger's fields:
 
 ```ts
-import { Cause, Logger, type LogLevel, Predicate, References } from "effect"
+import * as Cause from "effect/Cause"
+import * as Logger from "effect/Logger"
+import type * as LogLevel from "effect/LogLevel"
+import * as Predicate from "effect/Predicate"
+import * as References from "effect/References"
 
 type LogFn = (fields: Record<string, unknown>, message: string) => void
 // the project's existing logger, pino-style: logger.info(fields, message)
@@ -99,7 +105,7 @@ export const LoggingLive = Logger.layer([appLoggerBridge, Logger.tracerLogger])
 ## Tracing
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 
 declare const insertOrder: (orderId: string) => Effect.Effect<void>
 
@@ -128,7 +134,8 @@ Parents, links, sampling and propagation are in [the tracing reference](referenc
 ## Metrics
 
 ```ts
-import { Effect, Metric } from "effect"
+import * as Effect from "effect/Effect"
+import * as Metric from "effect/Metric"
 
 // define once, at module level: metrics are global, keyed by name and attributes
 const ordersPlaced = Metric.counter("orders_placed_total", { incremental: true }).pipe(Metric.withConstantInput(1))
@@ -166,10 +173,11 @@ Constructors, states and Prometheus are in [the metrics reference](references/ef
 | Prometheus scrape | `PrometheusMetrics.layerHttp()` on an `HttpRouter`, or `PrometheusMetrics.format()` |
 
 ```ts
-import { NodeRuntime } from "@effect/platform-node"
-import { Effect, Layer } from "effect"
-import { FetchHttpClient } from "effect/http"
-import { Otlp } from "effect/observability"
+import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as FetchHttpClient from "effect/http/FetchHttpClient"
+import * as Otlp from "effect/observability/Otlp"
 
 export const ObservabilityLive = Otlp.layerJson({
   baseUrl: "http://localhost:4318", // sends to /v1/traces, /v1/logs and /v1/metrics

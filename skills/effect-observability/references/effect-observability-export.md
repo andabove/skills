@@ -41,9 +41,10 @@ Every OTLP layer also needs an `HttpClient`: `FetchHttpClient.layer` from `effec
 - `OTEL_EXPORTER_OTLP_HEADERS` or `OTEL_EXPORTER_OTLP_<SIGNAL>_HEADERS`, `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES`, and the batch timings `OTEL_BSP_*`, `OTEL_BLRP_*`, `OTEL_METRIC_EXPORT_INTERVAL`.
 
 ```ts
-import { Layer } from "effect"
-import { FetchHttpClient } from "effect/http"
-import { Otlp, OtlpSerialization } from "effect/observability"
+import * as Layer from "effect/Layer"
+import * as FetchHttpClient from "effect/http/FetchHttpClient"
+import * as Otlp from "effect/observability/Otlp"
+import * as OtlpSerialization from "effect/observability/OtlpSerialization"
 
 // OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318 OTEL_SERVICE_NAME=orders-api
 // OTEL_TRACES_EXPORTER=otlp OTEL_LOGS_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp
@@ -60,9 +61,13 @@ export const ObservabilityLive = Otlp.layerFromConfig().pipe(
 - A process that never closes the layer (a serverless function with a long-lived `ManagedRuntime`) must flush at the end of each invocation. The per-signal layers provide `OtlpExporter.Flusher`:
 
 ```ts
-import { Effect, Layer, ManagedRuntime } from "effect"
-import { FetchHttpClient } from "effect/http"
-import { OtlpExporter, OtlpSerialization, OtlpTracer } from "effect/observability"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as ManagedRuntime from "effect/ManagedRuntime"
+import * as FetchHttpClient from "effect/http/FetchHttpClient"
+import * as OtlpExporter from "effect/observability/OtlpExporter"
+import * as OtlpSerialization from "effect/observability/OtlpSerialization"
+import * as OtlpTracer from "effect/observability/OtlpTracer"
 
 const TracingLive = OtlpTracer.layer({
   url: "https://collector.example.com/v1/traces",
@@ -89,9 +94,12 @@ Install `@effect/opentelemetry` at the same version as `effect`, and the OpenTel
 ### Traces
 
 ```ts
-import { OtelTracer, Resource } from "@effect/opentelemetry"
+import * as OtelTracer from "@effect/opentelemetry/OtelTracer"
+import * as Resource from "@effect/opentelemetry/Resource"
 import * as Otel from "@opentelemetry/api"
-import { Effect, Layer, ManagedRuntime } from "effect"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as ManagedRuntime from "effect/ManagedRuntime"
 
 // The SDK (for example NodeSDK from @opentelemetry/sdk-node) is started in the
 // instrumentation file, before this module loads. Effect reuses its global provider.
@@ -122,9 +130,9 @@ declare const createOrder: (body: unknown) => Effect.Effect<string>
 - Logs: give Effect the SDK's `LoggerProvider` instance (from `@opentelemetry/sdk-logs`), then add `OtelLogger.layer`:
 
 ```ts
-import { OtelLogger } from "@effect/opentelemetry"
+import * as OtelLogger from "@effect/opentelemetry/OtelLogger"
 import type { LoggerProvider } from "@opentelemetry/sdk-logs"
-import { Layer } from "effect"
+import * as Layer from "effect/Layer"
 
 declare const loggerProvider: LoggerProvider // exported by the module that starts the SDK
 
@@ -140,7 +148,7 @@ export const EffectLogsLive = OtelLogger.layer({ mergeWithExisting: false }).pip
 When there is no SDK yet but you want OpenTelemetry processors, exporters or vendor span processors, let Effect build it:
 
 ```ts
-import { NodeSdk } from "@effect/opentelemetry"
+import * as NodeSdk from "@effect/opentelemetry/NodeSdk"
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http"
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base"
 

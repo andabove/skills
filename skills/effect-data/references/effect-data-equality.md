@@ -24,7 +24,10 @@ Cyclic structures are supported.
 Implement both symbols, and keep them consistent: values that are equal must have the same hash.
 
 ```ts
-import { Equal, Hash, HashMap, Option } from "effect"
+import * as Equal from "effect/Equal"
+import * as Hash from "effect/Hash"
+import * as HashMap from "effect/HashMap"
+import * as Option from "effect/Option"
 
 class Sku implements Equal.Equal {
   constructor(readonly code: string, readonly label: string) {}
@@ -46,7 +49,8 @@ export const mugs: Option.Option<number> = HashMap.get(stock, new Sku("A-1", "Mu
 ## Data classes and tagged unions
 
 ```ts
-import { Data, Equal } from "effect"
+import * as Data from "effect/Data"
+import * as Equal from "effect/Equal"
 
 class Money extends Data.Class<{ readonly cents: number; readonly currency: string }> {
   add(that: Money): Money {
@@ -81,7 +85,7 @@ Payment.$is("Refused")(Payment.Pending()) // false
 - For a generic union, declare the union as a type alias, then a definition interface that applies it to `this["A"]`:
 
 ```ts
-import { Data } from "effect"
+import * as Data from "effect/Data"
 
 type Remote<A> = Data.TaggedEnum<{ Loaded: { readonly value: A }; Empty: {} }>
 interface RemoteDefinition extends Data.TaggedEnum.WithGenerics<1> {

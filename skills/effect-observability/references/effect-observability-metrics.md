@@ -34,7 +34,8 @@ Every constructor takes a name and an options object with an optional `descripti
 - `Metric.mapInput(m, f)` adapts the input type.
 
 ```ts
-import { Effect, Metric } from "effect"
+import * as Effect from "effect/Effect"
+import * as Metric from "effect/Metric"
 
 const failuresByTag = Metric.frequency("checkout_failures")
 

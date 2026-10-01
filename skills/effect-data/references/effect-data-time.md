@@ -46,7 +46,9 @@ A `DateTime` is either `Utc` (an instant) or `Zoned` (an instant plus a `TimeZon
 ### Zones
 
 ```ts
-import { DateTime, Effect, Option } from "effect"
+import * as DateTime from "effect/DateTime"
+import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
 
 export const meetingLabel = Effect.gen(function*() {
   const now = yield* DateTime.now

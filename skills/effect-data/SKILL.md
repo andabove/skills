@@ -7,7 +7,7 @@ description: Effect 4 data types, equality, caching and batching. Use when choos
 
 Checked against `effect 4.0.0`. When the project has a newer version, read `node_modules/effect/src/<Module>.ts` for the API and `node_modules/effect/AGENTS.md` for the maintainers' guidance before you trust a name here. The source wins over this skill and over the website.
 
-Import every module from `"effect"`. Import the `Array` module as `Arr` (`import { Array as Arr } from "effect"`) so it does not shadow the global `Array`.
+Import each module from its own subpath, as every example here does: `import * as Option from "effect/Option"`. Import the `Array` module as `Arr` (`import * as Arr from "effect/Array"`) so it does not shadow the global `Array`.
 
 ## Pick the type
 
@@ -50,7 +50,9 @@ Code written from Effect 3 memory uses these names. They do not exist in 4.0.0.
 ## Option and Result
 
 ```ts
-import { Effect, Option, Result } from "effect"
+import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
+import * as Result from "effect/Result"
 
 interface User {
   readonly id: string
@@ -93,7 +95,9 @@ export const program = Effect.gen(function*() {
 `Equal.equals` compares by value by default in Effect 4: plain objects, arrays, `Map`, `Set`, `Date`, `RegExp`, typed arrays and class instances, deeply. `HashMap`, `HashSet`, `Data.*` and `Option` all use it.
 
 ```ts
-import { Equal, Hash, HashSet } from "effect"
+import * as Equal from "effect/Equal"
+import * as Hash from "effect/Hash"
+import * as HashSet from "effect/HashSet"
 
 HashSet.size(HashSet.make({ sku: "A1" }, { sku: "A1" })) // 1
 new Set([{ sku: "A1" }, { sku: "A1" }]).size // 2: native Set compares by reference
@@ -122,7 +126,9 @@ HashSet.size(HashSet.make(new Account("a", new Date(1)), new Account("a", new Da
 ## Equivalence and Order
 
 ```ts
-import { Array as Arr, Equivalence, Order } from "effect"
+import * as Arr from "effect/Array"
+import * as Equivalence from "effect/Equivalence"
+import * as Order from "effect/Order"
 
 interface Person {
   readonly email: string
@@ -180,7 +186,12 @@ The operations and the `Chunk` rules are in [the collections reference](referenc
 ## Batching
 
 ```ts
-import { Context, Effect, Exit, Layer, Request, RequestResolver } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import * as Layer from "effect/Layer"
+import * as Request from "effect/Request"
+import * as RequestResolver from "effect/RequestResolver"
 
 class GetUser extends Request.TaggedClass("GetUser")<{ readonly id: number }, { readonly name: string }, string> {}
 

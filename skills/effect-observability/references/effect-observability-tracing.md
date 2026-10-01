@@ -32,7 +32,8 @@ Checked against `effect 4.0.0` and `@effect/opentelemetry 4.0.0`. Read `node_mod
 Turn trace ids received from a queue message, a job record or a header into a parent:
 
 ```ts
-import { Effect, Tracer } from "effect"
+import * as Effect from "effect/Effect"
+import * as Tracer from "effect/Tracer"
 
 declare const handleMessage: Effect.Effect<void>
 declare const message: { readonly traceId: string; readonly spanId: string }
@@ -46,7 +47,7 @@ export const consume = handleMessage.pipe(
 For a background job that should not extend the request's trace, start a new trace and link back:
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 
 declare const rebuildIndex: Effect.Effect<void>
 
@@ -67,7 +68,9 @@ The `effect/http` `HttpClient` creates a `http.client <METHOD>` span for each re
 A span whose `level` is below `Tracer.MinimumTraceLevel` (default `"All"`) is created with `sampled: false`, and so are its children.
 
 ```ts
-import { Effect, Layer, Tracer } from "effect"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Tracer from "effect/Tracer"
 
 declare const parseRow: (row: string) => Effect.Effect<number>
 

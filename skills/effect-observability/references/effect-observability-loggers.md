@@ -36,7 +36,7 @@ Formatters return a value; console loggers print it.
 - The JSON and structured formats do not include trace ids. Add them yourself:
 
 ```ts
-import { Logger } from "effect"
+import * as Logger from "effect/Logger"
 
 const jsonWithTrace = Logger.make((options) => {
   const span = options.fiber.cache.span
@@ -53,8 +53,10 @@ export const LoggingLive = Logger.layer([jsonWithTrace, Logger.tracerLogger])
 ## Batching and files
 
 ```ts
-import { NodeFileSystem } from "@effect/platform-node"
-import { Effect, Layer, Logger } from "effect"
+import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Logger from "effect/Logger"
 
 declare const ship: (records: ReadonlyArray<unknown>) => Effect.Effect<void>
 
@@ -75,7 +77,11 @@ export const FileLoggerLive = Logger.layer([Logger.toFile(Logger.formatLogFmt, "
 ## Choosing a logger per environment
 
 ```ts
-import { Config, Effect, Layer, Logger, References } from "effect"
+import * as Config from "effect/Config"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Logger from "effect/Logger"
+import * as References from "effect/References"
 
 export const LoggingLive = Layer.unwrap(
   Effect.gen(function*() {
@@ -100,7 +106,9 @@ export const LoggingLive = Layer.unwrap(
 Capture entries with a logger and assert on the data, not the formatted line:
 
 ```ts
-import { Effect, Logger, References } from "effect"
+import * as Effect from "effect/Effect"
+import * as Logger from "effect/Logger"
+import * as References from "effect/References"
 
 export const captureLogs = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
   Effect.gen(function*() {

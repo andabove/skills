@@ -22,7 +22,12 @@ The interrupted row is the trap: if the first caller times out or is cancelled, 
 ## Cache
 
 ```ts
-import { Cache, Context, Duration, Effect, Exit, Layer } from "effect"
+import * as Cache from "effect/Cache"
+import * as Context from "effect/Context"
+import * as Duration from "effect/Duration"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import * as Layer from "effect/Layer"
 
 interface Rate {
   readonly currency: string
@@ -68,7 +73,7 @@ export class Rates extends Context.Service<Rates, {
 A request is a value that describes one lookup and its result types. Requests compare by value.
 
 ```ts
-import { Request } from "effect"
+import * as Request from "effect/Request"
 
 interface Order {
   readonly id: string
