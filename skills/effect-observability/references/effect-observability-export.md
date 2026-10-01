@@ -88,7 +88,7 @@ Install `@effect/opentelemetry` at the same version as `effect`, and the OpenTel
 
 ### Traces
 
-```ts nocheck
+```ts
 import { OtelTracer, Resource } from "@effect/opentelemetry"
 import * as Otel from "@opentelemetry/api"
 import { Effect, Layer, ManagedRuntime } from "effect"
@@ -121,7 +121,7 @@ declare const createOrder: (body: unknown) => Effect.Effect<string>
 
 - Logs: give Effect the SDK's `LoggerProvider` instance (from `@opentelemetry/sdk-logs`), then add `OtelLogger.layer`:
 
-```ts nocheck
+```ts
 import { OtelLogger } from "@effect/opentelemetry"
 import type { LoggerProvider } from "@opentelemetry/sdk-logs"
 import { Layer } from "effect"
@@ -139,7 +139,7 @@ export const EffectLogsLive = OtelLogger.layer({ mergeWithExisting: false }).pip
 
 When there is no SDK yet but you want OpenTelemetry processors, exporters or vendor span processors, let Effect build it:
 
-```ts nocheck
+```ts
 import { NodeSdk } from "@effect/opentelemetry"
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http"
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base"
