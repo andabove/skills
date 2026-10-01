@@ -82,7 +82,7 @@ rg -n '^### `@effect/cluster/' .repos/effect/migration/v3-to-v4.md
 rg -n '^export (const|function|type|interface|class) catchFilter\b' .repos/effect/packages/effect/src/Effect.ts
 ```
 
-Look up APIs as you encounter them, one search at a time. A miss in the Import Map is not a dead end - check the **Removed Modules** and **No Counterpart Imports** sections before concluding anything. The reference was generated from a commit before the release tag (its header names commit `072cdc42`, which is not in the published history), so confirm each target in the v4 source.
+Read the rationale after each target, not only the name: for entries such as `Logger.replace`, `Effect.timeoutTo`, `ConfigProvider.fromMap` and `Queue.takeUpTo` it holds the part of the rewrite that the target name alone loses. Look up APIs as you encounter them, one search at a time. A miss in the Import Map is not a dead end - check the **Removed Modules** and **No Counterpart Imports** sections before concluding anything. The reference was generated from a commit before the release tag (its header names commit `072cdc42`, which is not in the published history), so confirm each target in the v4 source.
 
 ## The renames you meet most
 
@@ -98,12 +98,14 @@ Each v4 name below was checked in the 4.0.0 source and type checked in use. The 
 | `Effect.fork`, `forkDaemon` | `Effect.forkChild`, `forkDetach` |
 | `Effect.zipRight`, `zipLeft` | `Effect.andThen`, `Effect.tap` |
 | `Effect.tapErrorCause` | `Effect.tapCause` |
-| `Effect.async`, `asyncEffect` | `Effect.callback` |
+| `Effect.async` | `Effect.callback` (an effect returned from the callback is still the interrupt cleanup) |
+| `Effect.asyncEffect` | not a rename: v3 ran the returned effect as the registration, v4 runs it only on interruption. Register with `Effect.acquireRelease` in a scope and hand the result over through a `Deferred` (recipe in the renames reference) |
 | `Effect.fromNullable` | `Effect.fromNullishOr` |
 | `Effect.optionFromOptional` | `Effect.catchNoSuchElement` |
 | `Effect.orElse(() => fallback)` | `Effect.catch(() => fallback)` |
 | `Effect.orElseFail(() => e)` | `Effect.mapError(() => e)` |
-| `Effect.timeoutFail`, `timeoutTo` | `Effect.timeoutOrElse({ duration, orElse })` |
+| `Effect.timeoutFail({ duration, onTimeout })` | `Effect.timeoutOrElse({ duration, orElse: () => Effect.fail(onTimeout()) })` |
+| `Effect.timeoutTo({ duration, onSuccess, onTimeout })` | `Effect.map(onSuccess)` first, then `Effect.timeoutOrElse({ duration, orElse: () => Effect.succeed(onTimeout()) })`; without the `map`, the success value loses its transformation |
 | `Effect.dieMessage(m)` | `Effect.die(new Error(m))` |
 | `Effect.ignoreLogged` | `Effect.ignoreCause({ log: "Debug" })` (the reference's `Effect.ignore({ log: true })` lets defects through) |
 | `Effect.makeSemaphore`, `makeLatch` | `Semaphore.make`, `Latch.make` |
@@ -113,24 +115,28 @@ Each v4 name below was checked in the 4.0.0 source and type checked in use. The 
 | `Effect.Service` with `effect` and `dependencies` | `Context.Service<Self>()("id", { make })` plus your own `static layer = Layer.effect(this, this.make).pipe(Layer.provide(...))` |
 | `MyService.method(...)` (a `Tag` accessor) | `MyService.use((s) => s.method(...))`, or `yield* MyService` |
 | `FiberRef.currentLogLevel` and the other built-in `FiberRef`s | `References.CurrentLogLevel` and the rest of `References` |
+| `FiberRef.set`, `reset`, `delete`, `update` | not a rename: v4 references cannot be mutated. Wrap the work that must see the value in `Effect.provideService(work, Reference, value)`; model shared mutable state, or state a parent reads after joining a child, with a `Ref` |
 | `Effect.locally(effect, ref, value)` | `Effect.provideService(effect, Reference, value)` |
 | `Runtime<R>`, `Effect.runtime<R>()`, `Runtime.runFork(rt)` | `Context<R>`, `Effect.context<R>()`, `Effect.runForkWith(context)` |
 | `Layer.scoped`, `scopedDiscard` | `Layer.effect`, `effectDiscard` |
 | `Layer.fail(e)` | `Layer.effectDiscard(Effect.fail(e))` (the reference's `Layer.unwrap(Effect.fail(e))` types `E` and `R` as `unknown`) |
-| `Logger.replace(Logger.defaultLogger, l)` | `Logger.layer([l])` |
+| `Logger.replace(Logger.defaultLogger, l)` | `Logger.layer([l, Logger.tracerLogger])`: `Logger.layer` replaces the whole set, and v3 `replace` kept `tracerLogger`; list any other logger the app adds too |
 | `Either.right`, `left`, `Right`, `Left`, `isRight`, `isLeft` | `Result.succeed`, `fail`, `Success`, `Failure`, `isSuccess`, `isFailure` |
 | `Cause.isFailType`, `isDieType`, `isInterruptType` | `Cause.isFailReason`, `isDieReason`, `isInterruptReason`, applied to each of `cause.reasons` |
-| `Cause.failureOption`, `failureOrCause`, `dieOption` | `Cause.findErrorOption`, `findError`, `findDefect` |
+| `Cause.failureOption`, `failureOrCause`, `dieOption` | `Cause.findErrorOption`, `findError`, `findDefect`. `findError` puts the found error on the success side, the opposite of `failureOrCause`: `Either.isLeft(Cause.failureOrCause(c))` becomes `Result.isSuccess(Cause.findError(c))`, or `Cause.hasFails(c)` |
 | `Cause.sequential`, `parallel` | `Cause.combine` |
 | `Cause.NoSuchElementException`, `TimeoutException`, `UnknownException` | `Cause.NoSuchElementError`, `TimeoutError`, `UnknownError` |
 | `Exit.causeOption` | `Exit.getCause` |
 | `Scope.extend` | `Scope.provide` |
 | `Equal.equivalence` | `Equal.asEquivalence` |
 | `Schedule.union`, `intersect` | `Schedule.min([a, b])`, `Schedule.max([a, b])` (take an array) |
-| `Stream.async`, `asyncEffect`, `asyncScoped`, `asyncPush` | `Stream.callback` |
+| `Queue.awaitShutdown` | `Queue.await`, which ends with an interruption, not a success, after `Queue.shutdown`; handle it with `Effect.exit` or move the shutdown work to a finalizer |
+| `Queue.takeUpTo(q, n)` | no single call: `Queue.poll` returns one optional item, `Queue.takeN` waits for `n`, and `Queue.takeBetween(q, 0, n)` returns `[]`. Loop on `Queue.poll` up to `n` (recipe in the renames reference) |
+| `Queue.takeAll` as a non-blocking drain | `Queue.clear` (v4 `takeAll` waits while the queue is empty) |
+| `Stream.async`, `asyncEffect`, `asyncScoped`, `asyncPush` | `Stream.callback`, with a lifecycle rewrite: the effect that the v4 callback returns is the registration, not the cleanup. Register cleanup inside it with `Effect.addFinalizer` or `Effect.acquireRelease`. The v4 buffer is unbounded by default (v3: 16); pass `{ bufferSize: 16 }` to keep backpressure |
 | `effect/unstable/http` and other `effect/unstable/*` imports | `effect/http`, `effect/rpc`, ... (see **Repo-Level Changes**) |
 
-Removed APIs with no counterpart, listed by module: [references/effect-v3-to-v4-removed.md](references/effect-v3-to-v4-removed.md).
+Rows marked "not a rename" change behaviour: rewrite the call site, do not swap the name. Removed APIs with no counterpart, listed by module: [references/effect-v3-to-v4-removed.md](references/effect-v3-to-v4-removed.md).
 
 ## Changes that still compile
 
@@ -141,6 +147,10 @@ These compile after the rename, and behave differently. Check each one where the
 - **`Effect.runSync` and `Effect.runPromise` throw the failure itself**, not a `FiberFailure` wrapper. `Effect.runSync(Effect.fail("boom"))` throws the string `"boom"`, so `error.message` is `undefined`. Use `Effect.runPromiseExit` where the caller must inspect the failure.
 - **`ignoreLogged` swallowed defects and interruptions.** v4 `Effect.ignore` handles failures only, so a defect that v3 ignored now fails the effect. Code that relied on it to keep a background loop alive needs `Effect.ignoreCause({ log: "Debug" })`, which also matches v3's Debug log level.
 - **`Schema.Symbol` and `TxSubscriptionRef.changes` keep their names with new behaviour.** The reference lists both as removed. `Schema.Symbol` is now the schema of `symbol` values, without a string codec; `TxSubscriptionRef.changes` is scoped.
+- **Typed handlers now recover a cause that also holds a defect.** When a failure and a dying finalizer meet (`["Fail", "Die"]`), v4 `Effect.catch`, `catchTag`, `result`, `ignore` and `catchDefect` recover and drop the defect, and `Effect.retry` retries it and keeps only the last `Fail`. v3 `catchAll`, `either`, `ignore` and `retry` let it fail with the defect. Where a defect must survive, guard with `Cause.hasDies` (see `effect-errors`, **Mixed causes**).
+- **`Schedule.fibonacci` starts one step later.** With a base of 1 ms the delays are 1, 2, 3, 5, 8 in v4 and 1, 1, 2, 3, 5 in v3. A retry budget that counts on the first delays waits longer in v4.
+- **`Queue.takeAll` blocks on an empty queue.** v3 returned an empty chunk. Use `Queue.clear` for the old non-blocking drain.
+- **`FiberRef.set` has no v4 equivalent that mutates.** A mechanical port to `Effect.provideService` around nothing reads the old value afterwards (0 after setting 1), and a parent no longer sees a value that a joined child set (0, where v3 read 42).
 - **A process that only waits can exit.** Neither v3 nor 4.0.0 keeps Node alive for a fiber that waits on a `Deferred` or a `Queue` under `Effect.runPromise`. Keep `NodeRuntime.runMain` as the entry point.
 
 ## Where the docs disagree with 4.0.0
@@ -159,8 +169,8 @@ Every finding, with the reference line number and how it was checked: [reference
 
 Faithful per-API lookup alone still yields a broken `package.json`. Handle these once, up front:
 
-- **Package consolidation.** `@effect/platform`, `@effect/rpc`, `@effect/cluster`, and others merged into the core `effect` package - remove them from `package.json` and rewrite their imports per the Import Map. Packages that remain separate (`@effect/platform-*`, `@effect/sql-*`, `@effect/ai-*`, `@effect/opentelemetry`, `@effect/atom-*`, `@effect/vitest`) stay as dependencies.
-- **Version alignment.** All Effect ecosystem packages share one version number in v4. Every remaining `effect` / `@effect/*` dependency must be on the same matching version. Install from the `latest` dist-tag: on 2026-10-01 `rc` points to `4.0.0-rc.118`, older than `latest` (`4.0.0`).
+- **Package consolidation.** `@effect/platform`, `@effect/rpc`, `@effect/cluster`, and others merged into the core `effect` package - remove them from `package.json` and rewrite their imports per the Import Map. Use the direct module path it gives (`effect/FileSystem`, `effect/http/HttpClient`), as a namespace import, not the suggested barrel. Packages that remain separate (`@effect/platform-*`, `@effect/sql-*`, `@effect/ai-*`, `@effect/opentelemetry`, `@effect/atom-*`, `@effect/vitest`) stay as dependencies.
+- **Version alignment.** The runtime packages share one version number in v4. Every remaining `effect`, `@effect/platform-*`, `@effect/sql-*`, `@effect/ai-*`, `@effect/opentelemetry`, `@effect/atom-*` and `@effect/vitest` dependency must be on the same matching version. Tooling keeps its own versions: `@effect/tsgo` (0.47.2) and `@effect/language-service` (0.87.3) have no `4.0.0` release, so leave them on their own latest. Install from the `latest` dist-tag: on 2026-10-01 `rc` points to `4.0.0-rc.118`, older than `latest` (`4.0.0`).
 - **Unstable modules have no `unstable` segment.** Some functionality is marked `@stability unstable` (it may break in minor releases) and lives under paths such as `effect/http`, `effect/rpc` and `effect/ai/LanguageModel`. Import paths with `effect/unstable/...` were removed before 4.0.0 and have no compatibility export; replace `effect/unstable/http` with `effect/http`.
 
 ## Delegating to Sub-Agents

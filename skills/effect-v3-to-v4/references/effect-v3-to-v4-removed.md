@@ -8,7 +8,9 @@ Before you rewrite a call to one of these, look up its name in the reference: mo
 
 ## Whole modules
 
-`effect/ChildExecutorDecision`, `effect/Encoding`, `effect/MergeState`, `effect/ModuleVersion`, `effect/RateLimiter` (a rate limiter now lives in `effect/persistence/RateLimiter`), `effect/RuntimeFlagsPatch`, `effect/ScheduleInterval`, `effect/ScheduleIntervals`, `effect/Streamable`, `effect/TestAnnotation`, `effect/TestAnnotationMap`, `effect/TestAnnotations`, `effect/UpstreamPullRequest`, `effect/UpstreamPullStrategy`, `@effect/platform/HttpMultiplex`.
+`effect/ChildExecutorDecision`, `effect/MergeState`, `effect/ModuleVersion`, `effect/RateLimiter` (a rate limiter now lives in `effect/persistence/RateLimiter`), `effect/RuntimeFlagsPatch`, `effect/ScheduleInterval`, `effect/ScheduleIntervals`, `effect/Streamable`, `effect/TestAnnotation`, `effect/TestAnnotationMap`, `effect/TestAnnotations`, `effect/UpstreamPullRequest`, `effect/UpstreamPullStrategy`, `@effect/platform/HttpMultiplex`.
+
+`effect/Encoding` is listed as removed in the reference but moved: its codecs live in `effect/encoding/Base64`, `effect/encoding/Base64Url` and `effect/encoding/Hex` (`encodeBase64` to `Base64.encode`, `decodeBase64` to `Base64.decode`, which returns a `Result`, and the same for `Base64Url` and `Hex`). A Base64 round trip through `effect/encoding/Base64` returns the input unchanged. v3 `encodeUriComponent` and `decodeUriComponent` have no v4 module; use the JavaScript globals.
 
 Other v3 modules are gone as modules but have per-API replacements: for example `effect/Either` (now `effect/Result`), `effect/FiberRef` (now `Context.Reference` and `References`), `effect/Micro`, `effect/STM` and the `T*` modules (now the `Tx*` modules). Their removed members are in the list below.
 
@@ -88,7 +90,7 @@ The reference lists these as removed, but 4.0.0 exports the name with a differen
 - `effect/TestLive`: `TestLive.TestLive`
 - `effect/TestServices`: `TestServices.annotate`, `TestServices.annotations`, `TestServices.annotationsLayer`, `TestServices.annotationsWith`, `TestServices.get`, `TestServices.liveLayer`, `TestServices.liveServices`, `TestServices.supervisedFibers`, `TestServices.testConfig`, `TestServices.testConfigLayer`, `TestServices.testConfigWith`, `TestServices.withAnnotations`, `TestServices.withAnnotationsScoped`, `TestServices.withLiveScoped`, `TestServices.withTestConfig`, `TestServices.withTestConfigScoped`, `TestServices.live`*
 - `effect/Tuple`: `Tuple.TupleTypeLambda`
-- `effect/Utils`: `Utils.Adapter`, `Utils.GenKind`, `Utils.GenKindImpl`, `Utils.PCGRandomState`, `Utils.YieldWrap`, `Utils.adapter`, `Utils.internalCall`, `Utils.isGenKind`, `Utils.isGeneratorFunction`, `Utils.makeGenKind`, `Utils.structuralRegion`, `Utils.structuralRegionState`, `Utils.yieldWrapGet`
+- `effect/Utils`: `Utils.Adapter`, `Utils.GenKind`, `Utils.GenKindImpl`, `Utils.PCGRandomState`, `Utils.YieldWrap`, `Utils.adapter`, `Utils.internalCall` (still in the 4.0.0 source and runtime exports, marked `@internal` and absent from the type declarations: not public API), `Utils.isGenKind`, `Utils.isGeneratorFunction`, `Utils.makeGenKind`, `Utils.structuralRegion`, `Utils.structuralRegionState`, `Utils.yieldWrapGet`
 - `@effect/platform/Command`: `Command.flatten`
 - `@effect/platform/FileSystem`: `FileSystem.File.Descriptor`, `FileSystem.FileDescriptor`
 - `@effect/platform/HttpLayerRouter`: `HttpLayerRouter.FindMyWay`*
