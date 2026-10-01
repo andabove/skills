@@ -78,6 +78,8 @@ const price = Effect.gen(function* () {
 export const discounted = price.pipe(Effect.provideService(NewCheckout, true))
 ```
 
+The built-in services are references too: `Clock.Clock`, `Console.Console`, `Random.Random`, `ConfigProvider.ConfigProvider` and `Tracer.Tracer` need no layer. Override one for a region with `Effect.provideService` or a helper such as `Random.withSeed`. Read time through `Clock`, not `Date.now()`, so a test clock can control it. Details: [references/effect-services-layers.md](references/effect-services-layers.md).
+
 ## Compose layers
 
 A `Layer<Out, E, In>` builds the services `Out`, can fail with `E`, and needs `In`.
@@ -99,6 +101,9 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Redacted from "effect/Redacted"
+import * as Schema from "effect/Schema"
+
+export class SqlError extends Schema.TaggedError<SqlError>()("SqlError", { cause: Schema.Defect() }) {}
 
 interface Pool {
   query(text: string): Promise<ReadonlyArray<unknown>>
@@ -107,7 +112,7 @@ interface Pool {
 declare function openPool(url: string): Pool
 
 export class Sql extends Context.Service<Sql, {
-  query(text: string): Effect.Effect<ReadonlyArray<unknown>>
+  query(text: string): Effect.Effect<ReadonlyArray<unknown>, SqlError>
 }>()("myapp/db/Sql") {
   static readonly layer = Layer.effect(
     Sql,
@@ -117,13 +122,15 @@ export class Sql extends Context.Service<Sql, {
         Effect.sync(() => openPool(Redacted.value(url))),
         (pool) => Effect.promise(() => pool.end())
       )
-      return Sql.of({ query: (text) => Effect.promise(() => pool.query(text)) })
+      return Sql.of({
+        query: (text) => Effect.tryPromise({ try: () => pool.query(text), catch: (cause) => new SqlError({ cause }) })
+      })
     })
   )
 }
 
 export class Reports extends Context.Service<Reports, {
-  readonly daily: Effect.Effect<number>
+  readonly daily: Effect.Effect<number, SqlError>
 }>()("myapp/reports/Reports") {
   static readonly layerNoDeps = Layer.effect(
     Reports,
@@ -137,6 +144,8 @@ export class Reports extends Context.Service<Reports, {
 
 export const AppLayer = Layer.mergeAll(Reports.layer, Sql.layer)
 ```
+
+- Wrap a driver call with `Effect.tryPromise` and a tagged error, and put the error in the shape. `Effect.promise` turns a rejection into a defect, which `Effect.retry` and `catchTag` skip.
 
 - Build the whole graph into one `AppLayer` and provide it once at the edge. Inside one build, a layer object that several layers use is built once and shared: `Sql.layer` above opens one pool.
 - Memoization is by object reference. A factory such as `makeSqlLayer()` called twice gives two layers and two pools. Call it once and reuse the value. Use `Layer.fresh(layer)` when you want a second instance on purpose.
@@ -177,7 +186,7 @@ export const MailConfig = Config.all({
 }).pipe(Config.nested("SMTP"))
 ```
 
-- Read config in the layer that needs it, not at module scope and not in each method call. A missing or invalid value then fails the layer build with a `ConfigError` that names the key, before any request runs.
+- Read config in the layer that needs it, not at module scope and not in each method call. A missing or invalid value then fails the layer build with a `ConfigError` that names the key: at startup under `runMain`, at the first run under a lazy `ManagedRuntime` (see below).
 - `Config.withDefault(x)` applies only when the key is absent or empty. An invalid value still fails. `Config.orElse` recovers from every error, bad input included: use it only when that is the intent. `Config.option` gives an `Option`.
 - Read secrets with `Config.Redacted`. `String(secret)` and `JSON.stringify` show `<redacted>`. Call `Redacted.value(secret)` only where the secret is used.
 - `Config.nested("SMTP")` joins path segments with `_`: `SMTP_HOST`. Keys are used as written. To read a camelCase key such as `databaseHost` from `DATABASE_HOST`, or a `Config.schema` field `host` under `"server"` from `SERVER_HOST`, install `ConfigProvider.fromEnv().pipe(ConfigProvider.constantCase)`.
@@ -192,20 +201,7 @@ Choose by who owns the process entry point.
 
 **You own it** (a script, a worker, a server you start): express the app as layers and hand it to `NodeRuntime.runMain` from `@effect/platform-node`. On SIGINT or SIGTERM it interrupts the program and runs every finalizer. On failure it logs the cause and exits with code 1.
 
-```ts
-import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
-import * as Console from "effect/Console"
-import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
-
-const Worker = Layer.effectDiscard(
-  Effect.forkScoped(Effect.forever(Console.log("tick").pipe(Effect.delay("1 second"))))
-)
-
-NodeRuntime.runMain(Layer.launch(Worker))
-```
-
-For a program that ends, write `NodeRuntime.runMain(main.pipe(Effect.provide(AppLayer)))`.
+For a long-running app (a server, a worker), write `NodeRuntime.runMain(Layer.launch(AppLayer))`. For a program that ends, write `NodeRuntime.runMain(main.pipe(Effect.provide(AppLayer)))`. Import `NodeRuntime` from `@effect/platform-node/NodeRuntime`.
 
 **A framework owns it** (Hono, Express, Next.js, Nitro, a queue consumer): make one `ManagedRuntime` from the app layer at module scope, and run each handler's effect through it.
 
@@ -241,18 +237,15 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 }
 ```
 
-- `ManagedRuntime.make(layer)` builds nothing until the first run. Concurrent first runs share one build, and later runs reuse it. When the layer fails, each run rejects with the layer's error.
-- On a typed failure, `runtime.runPromise` rejects with the error value. Catch typed errors inside the effect and turn them into responses, so the promise rejects only on defects.
+- `ManagedRuntime.make(layer)` builds nothing until the first run. Concurrent first runs share one build, and later runs reuse it. When the layer fails, each run rejects with the layer's error. To fail fast, await `runtime.runPromise(Effect.void)` at startup, before the server listens.
+- On a typed failure, `runtime.runPromise` rejects with the error value. Catch the handler's typed errors inside the effect and turn them into responses. The promise can still reject on interruption (an aborted request), on a layer build failure such as a `ConfigError`, and on defects.
 - Pass the request's abort signal as `{ signal }`. A client disconnect then interrupts the work and runs its finalizers.
 - Call `await runtime.dispose()` at shutdown. It interrupts fibers still running, then closes the layer scope. A run after `dispose` rejects with `ManagedRuntime disposed`.
-- Make one runtime per process. A runtime per request rebuilds every layer per request.
-- A dev server that re-evaluates modules (Next.js, Vite, Nitro) makes a new runtime on each reload, and the old one keeps its resources open. Keep the runtime on `globalThis` in development and reuse it.
+- Make one runtime per process. A runtime per request rebuilds every layer per request, and a dev server that re-evaluates modules makes a new runtime per reload: keep it on `globalThis` in development.
 
 Hono, Express, Next.js and Nitro glue, request-scoped values and shutdown: [references/effect-services-frameworks.md](references/effect-services-frameworks.md).
 
-## Platform services
-
-`effect` ships platform-neutral service keys: `FileSystem.FileSystem`, `Path.Path`, `Terminal.Terminal` and others. Code depends on the key, and the edge provides an implementation: `NodeServices.layer` from `@effect/platform-node`, or `BunServices.layer` from `@effect/platform-bun`. Tests stub only the methods they call with `FileSystem.layerNoop({ ... })`. Details: [references/effect-services-platform.md](references/effect-services-platform.md).
+**Platform services.** `effect` ships platform-neutral service keys: `FileSystem.FileSystem`, `Path.Path`, `Terminal.Terminal` and others. Code depends on the key, and the edge provides an implementation: `NodeServices.layer` from `@effect/platform-node`, or `BunServices.layer` from `@effect/platform-bun`. Tests stub only the methods they call with `FileSystem.layerNoop({ ... })`. Details: [references/effect-services-platform.md](references/effect-services-platform.md).
 
 ## Review
 

@@ -36,6 +36,7 @@ Effect 4.0.0 has no function that turns a foreign Standard Schema into an Effect
 
 ```ts
 import * as Effect from "effect/Effect"
+import * as Predicate from "effect/Predicate"
 import * as Schema from "effect/Schema"
 import type { StandardSchemaV1 } from "effect/StandardSchema"
 
@@ -59,7 +60,7 @@ export const decodeStandard = <S extends StandardSchemaV1>(schema: S) =>
   (input: unknown): Effect.Effect<StandardSchemaV1.InferOutput<S>, StandardSchemaError> =>
     Effect.suspend(() => {
       const result = schema["~standard"].validate(input)
-      return result instanceof Promise ? Effect.flatMap(Effect.promise(() => result), toEffect) : toEffect(result)
+      return Predicate.isPromise(result) ? Effect.flatMap(Effect.promise(() => result), toEffect) : toEffect(result)
     })
 ```
 
@@ -79,15 +80,27 @@ export const signup = (body: unknown) =>
 ```
 
 - The output type is the zod schema's output type.
+- The adapter tests for a promise with `Predicate.isPromise`, which checks for a `then` method. `instanceof Promise` misses a promise from another realm (a `node:vm` context, an iframe) and would treat it as a successful result with an `undefined` value.
 - A zod schema with an async refinement makes `validate` return a `Promise`; the adapter then needs `Effect.runPromise` or a runtime's `runPromise`, as any async Effect does.
 - A throw inside a zod refinement makes `validate` return a rejected `Promise`. The adapter then turns it into a defect, not a `StandardSchemaError`, and the effect is asynchronous, so run it with `runPromise`.
 
 ## Move a zod codebase to Effect Schema
 
+Sort each schema's consumers first:
+
+- A **Standard Schema consumer** calls `~standard.validate` (for example `standardSchemaResolver` from `@hookform/resolvers`). It accepts `Schema.toStandardSchemaV1(schema)`.
+- A **zod consumer** calls zod's own API (for example `zodResolver`). It rejects an Effect schema with `Invalid input: not a Zod schema`. `toStandardSchemaV1` does not give an Effect schema zod's API.
+
+Then:
+
 1. Keep each existing zod schema where it is. Where Effect code needs one, call it through `decodeStandard`.
-2. Write every new schema with Effect Schema. Where a zod-only library needs it, pass `Schema.toStandardSchemaV1(schema)`.
+2. Write new schemas with Effect Schema when every consumer is a Standard Schema consumer. Keep zod for a schema that a zod consumer reads, or move that consumer to its Standard Schema integration first.
 3. Convert one module at a time, starting with the schemas that Effect code reads most. Delete the zod schema in the same change, so one value is never validated by two libraries.
-4. Translate by meaning, not by name: `z.string().email()` has no single counterpart; write `Schema.String.check(Schema.isPattern(...))`. `z.coerce.number()` becomes `Schema.FiniteFromString`. `.optional()` becomes `Schema.optional` or, for an absent key only, `Schema.optionalKey`. `.transform(f)` becomes `Schema.decodeTo` with a transformation, which also needs an `encode` direction or `SchemaGetter.forbidden`.
+4. Translate by meaning, not by name, and test the boundary with the inputs it really receives:
+   - `z.string().email()` has no single counterpart; write `Schema.String.check(Schema.isPattern(...))`.
+   - `z.coerce.number()` is not `Schema.FiniteFromString`. zod coerces any input with `Number()`: `123` stays `123`, `true` becomes `1`, `null` becomes `0`. `Schema.FiniteFromString` accepts only strings and rejects all three. Use it when only strings should pass, and say so in the change. Write an explicit transformation from `Schema.Union([Schema.String, Schema.Finite, Schema.Boolean])` when callers rely on the other coercions.
+   - `.optional()` becomes `Schema.optional`, or `Schema.optionalKey` for an absent key only.
+   - `.transform(f)` becomes `Schema.decodeTo` with a transformation, which also needs an `encode` direction or `SchemaGetter.forbidden`.
 
 ## JSON Schema
 
@@ -115,4 +128,5 @@ export const strict = Schema.toJsonSchemaDocument(Order, { onExcessProperty: "er
 - An `identifier` annotation becomes a definition referenced with `$ref`. A recursive schema needs one.
 - Built-in checks become constraints (`minLength`, `pattern`, `maximum`). A custom `makeFilter` check needs a `toJsonSchema` annotation to appear.
 - `JsonSchema.toDocumentDraft07(document)` converts to Draft 07, and `JsonSchema.toDocumentDraft04` to Draft 04.
+- Generation is best effort. A schema whose meaning JSON Schema cannot state comes out looser: a custom `makeFilter` check without `toJsonSchema` disappears (`{ type: "number" }`), and an opaque `Schema.declare` without a JSON codec becomes an unconstrained `{}`. Validate with the Effect schema, and use the JSON Schema for documentation and clients.
 - The website documents an `additionalProperties` option and a closed default; version 4.0.0 has neither.

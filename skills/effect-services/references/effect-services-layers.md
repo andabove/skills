@@ -24,12 +24,13 @@ Version 4 has no `Layer.scoped` and no `Layer.function`. `Layer.effect` covers s
 ## Combinators
 
 ```ts
+import * as Clock from "effect/Clock"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 
 class Now extends Context.Service<Now, { readonly now: Effect.Effect<number> }>()("myapp/Now") {
-  static readonly layer = Layer.succeed(Now, Now.of({ now: Effect.sync(() => Date.now()) }))
+  static readonly layer = Layer.succeed(Now, Now.of({ now: Clock.currentTimeMillis }))
 }
 
 class Ids extends Context.Service<Ids, { readonly next: Effect.Effect<string> }>()("myapp/Ids") {
@@ -58,6 +59,35 @@ export const merged: Layer.Layer<Ids | Now, never, Now> = Layer.mergeAll(Ids.lay
 - `Layer.provide(self, that)` and `Layer.provideMerge(self, that)` take one layer or an array of layers as `that`.
 - Use `provide` for dependencies the outside world should not reach. Use `provideMerge` when callers also need the dependency, for example a test that inspects a fake.
 - `Layer.merge(a, b)` and `Layer.mergeAll(...layers)` do not wire outputs into inputs. When one merged layer needs another, add `Layer.provide` as well.
+
+## Built-in services
+
+Effect provides five services with no layer: `Clock.Clock`, `Console.Console`, `Random.Random`, `ConfigProvider.ConfigProvider` and `Tracer.Tracer`. Each is a `Context.Reference`, so it adds nothing to `R`. Read them through their modules (`Clock.currentTimeMillis`, `Console.log`, `Random.nextInt`), and override one for a region with `Effect.provideService` or a helper:
+
+```ts
+import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as Random from "effect/Random"
+
+const roll = Effect.gen(function* () {
+  const n = yield* Random.nextIntBetween(1, 6)
+  yield* Console.log(`rolled ${n}`)
+  return n
+})
+
+// each call seeds a new generator, so each run gives the same numbers
+export const seeded = () => roll.pipe(Random.withSeed("test-seed"))
+
+// capture console output instead of printing it
+const lines: Array<string> = []
+export const captured = roll.pipe(
+  Effect.provideService(Console.Console, { ...globalThis.console, log: (...args) => { lines.push(args.join(" ")) } })
+)
+```
+
+- `Random.withSeed` creates its generator when you call it. Running one seeded effect value twice continues the same sequence; call `withSeed` per run, as `seeded()` does, for repeatable results.
+- Read time through `Clock`, not `Date.now()`. A service built on `Date.now()` ignores the test clock; tests then have to replace that service. `TestClock` belongs to [effect-testing](skill:effect-testing).
+- An override applies only to the effect it is provided to. Use `Layer.succeed(Console.Console, ...)` in the app layer to change it everywhere.
 
 ## Naming
 

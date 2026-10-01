@@ -132,6 +132,32 @@ export const FreeUsername = Schema.String.pipe(
 )
 ```
 
+## Concurrency of effectful steps
+
+When a struct, tuple, array or union holds several effectful steps, decoding runs them one at a time by default. Pass the `concurrency` parse option to run them together: a number caps them, `"unbounded"` removes the cap.
+
+```ts
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
+import * as SchemaGetter from "effect/SchemaGetter"
+
+declare const isUsernameFree: (name: string) => Promise<boolean>
+
+const FreeUsername = Schema.String.pipe(
+  Schema.decode({
+    decode: SchemaGetter.checkEffect((name) =>
+      Effect.promise(() => isUsernameFree(name)).pipe(Effect.map((free) => free || `${name} is taken`))
+    ),
+    encode: SchemaGetter.passthrough()
+  })
+)
+
+// checks up to 5 names at once instead of one after another
+export const decodeNames = Schema.decodeUnknownEffect(Schema.Array(FreeUsername), { concurrency: 5 })
+```
+
+Cap it to what the service behind the step can take.
+
 ## Optional keys
 
 `SchemaGetter.transformOptional` receives the field as an `Option`: `None` when the key is absent. Return `None` to leave the key out of the output.

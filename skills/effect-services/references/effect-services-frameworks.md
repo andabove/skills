@@ -69,14 +69,14 @@ export const getTodo = (id: string): Effect.Effect<HttpResult, never, Todos> =>
     Effect.catchTag("TodoNotFound", (e) => Effect.succeed({ status: 404, body: { error: `No todo ${e.id}` } }))
   )
 
-export const createTodo = (body: unknown): Effect.Effect<HttpResult, never, Todos> =>
-  Effect.gen(function* () {
+export const createTodo: (body: unknown) => Effect.Effect<HttpResult, never, Todos> = Effect.fn("createTodo")(
+  function* (body: unknown) {
     const input = yield* decodeCreateTodo(body)
     const todo = yield* Todos.use((todos) => todos.create(input.title))
     return { status: 201, body: todo }
-  }).pipe(
-    Effect.catchTag("SchemaError", (e) => Effect.succeed({ status: 400, body: { error: e.message } }))
-  )
+  },
+  Effect.catchTag("SchemaError", (e) => Effect.succeed({ status: 400, body: { error: e.message } }))
+)
 ```
 
 The endpoint type `Effect<HttpResult, never, Todos>` is the contract: `never` proves every typed error became a response, and `Todos` is covered by the runtime. When the runtime lacks a service an endpoint needs, `runtime.runPromise` does not type check.
@@ -136,6 +136,7 @@ Express has no request signal. Make one that aborts when the response closes bef
 
 ```ts nocheck
 import express from "express"
+import * as Effect from "effect/Effect"
 import { createTodo, getTodo, runtime } from "./effect"
 
 export const app = express()
@@ -159,25 +160,48 @@ app.post("/todos", async (req, res) => {
   res.status(result.status).json(result.body)
 })
 
+// build the layers now, so a bad config stops startup instead of failing the first request
+await runtime.runPromise(Effect.void)
 const server = app.listen(3000)
-process.once("SIGTERM", () => {
-  server.close(() => {
-    void runtime.dispose().then(() => process.exit(0))
-  })
-})
+
+// stop accepting connections, wait at most 10 seconds for open requests, then dispose
+// whether or not they finished: dispose interrupts the runs that are left
+const shutdown = async (): Promise<void> => {
+  const closed = new Promise<void>((resolve) => server.close(() => resolve()))
+  await Promise.race([closed, new Promise((resolve) => setTimeout(resolve, 10_000))])
+  await runtime.dispose()
+  server.closeAllConnections()
+  process.exit(0)
+}
+process.once("SIGTERM", () => void shutdown())
 ```
+
+Put `runtime.dispose()` after a bounded wait, never only inside `server.close`'s callback. That callback waits for every open request, and a request that never ends (a stream, a long poll, a hung call) then blocks disposal forever.
 
 Express 4 does not forward a rejected promise from an async handler to its error handler. On Express 4, wrap each handler body in `try`/`catch`.
 
 ## Nitro (and Nuxt server routes)
 
+This route is for Nitro 2 with h3 1.x on the Node server preset, where `event.node.res` is Node's `ServerResponse`. h3 has no request signal there, so derive one as Express does. Check h3 2 and non-Node presets before you reuse it.
+
 ```ts nocheck
 // server/routes/todos/[id].get.ts
+import type { ServerResponse } from "node:http"
 import { defineEventHandler, getRouterParam } from "h3"
 import { getTodo, runtime } from "../../effect"
 
+const disconnectSignal = (res: ServerResponse): AbortSignal => {
+  const controller = new AbortController()
+  res.on("close", () => {
+    if (!res.writableFinished) controller.abort()
+  })
+  return controller.signal
+}
+
 export default defineEventHandler(async (event) => {
-  const result = await runtime.runPromise(getTodo(getRouterParam(event, "id") ?? ""))
+  const result = await runtime.runPromise(getTodo(getRouterParam(event, "id") ?? ""), {
+    signal: disconnectSignal(event.node.res)
+  })
   return Response.json(result.body, { status: result.status })
 })
 ```
@@ -194,7 +218,7 @@ export default defineNitroPlugin((nitroApp) => {
 
 ## Request-scoped values
 
-Per-request data (the signed-in user, a request id) is not a layer. Build it in the handler and attach it with `Effect.provideService`, which costs nothing per request.
+Per-request data (a request id, the signed-in user) is not a layer. Build it in the handler and attach it with `Effect.provideService`, which costs nothing per request.
 
 ```ts
 import * as Context from "effect/Context"
@@ -202,28 +226,31 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as ManagedRuntime from "effect/ManagedRuntime"
 
-export class CurrentUser extends Context.Service<CurrentUser, { readonly id: string }>()("myapp/auth/CurrentUser") {}
+export class RequestId extends Context.Service<RequestId, string>()("myapp/http/RequestId") {}
 
-const whoAmI = Effect.gen(function* () {
-  const user = yield* CurrentUser
-  return { status: 200, body: { id: user.id } }
+const handle = Effect.gen(function* () {
+  const requestId = yield* RequestId
+  yield* Effect.log(`handling ${requestId}`)
+  return { status: 200, body: { requestId } }
 })
 
 const runtime = ManagedRuntime.make(Layer.empty)
 
 export async function GET(request: Request): Promise<Response> {
-  const userId = request.headers.get("x-user-id")
-  if (userId === null) return Response.json({ error: "unauthenticated" }, { status: 401 })
-  const result = await runtime.runPromise(whoAmI.pipe(Effect.provideService(CurrentUser, { id: userId })), {
+  const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID()
+  const result = await runtime.runPromise(handle.pipe(Effect.provideService(RequestId, requestId)), {
     signal: request.signal
   })
   return Response.json(result.body, { status: result.status })
 }
 ```
 
-## Shutdown
+Provide the signed-in user the same way, but build it only from a verified principal: a session your server looked up, or a token whose signature you checked. A header such as `x-user-id` comes from the client, and anyone can set it. Trust an identity header only from an authenticated proxy that strips the client's copy.
 
-- A server you start: on SIGTERM, stop accepting connections, then `await runtime.dispose()`. Dispose interrupts runs still in flight, then closes the layers.
+## Startup and shutdown
+
+- A `ManagedRuntime` builds its layers at the first run. Await `runtime.runPromise(Effect.void)` before the server listens, so a missing config value or an unreachable dependency stops startup.
+- A server you start: on SIGTERM, stop accepting connections, wait a bounded time for open requests, then `await runtime.dispose()` whether or not they finished. Dispose interrupts runs still in flight, then closes the layers.
 - Nitro: dispose in the `close` hook, as above.
 - Serverless and Next.js: the platform can freeze or stop the process without a signal. Use resources that survive an abrupt end, such as pooled connections with idle timeouts, and do not depend on finalizers for correctness.
 
@@ -232,5 +259,5 @@ export async function GET(request: Request): Promise<Response> {
 - A runtime per request builds every layer per request: new pools, new clients. So does `Effect.provide(handler, layer)` per request for any layer the runtime did not already build.
 - `runtime.runSync` fails with an `AsyncFiberError` defect when the effect is asynchronous. In async handlers use `runPromise`.
 - A typed failure that reaches `runPromise` rejects the promise with the error value, and the framework answers 500. Catch typed errors inside the endpoint effect, so its error type is `never`.
-- An aborted run rejects too. The client is gone; let the framework's error handler drop it.
+- An aborted run rejects too, and so does every run when the layer build fails. The client is gone in the first case; let the framework's error handler drop it.
 - Two runtimes over the same layer build it twice. When two runtimes must share built layers (for example two entry bundles), pass one `Layer.makeMemoMapUnsafe()` as `{ memoMap }` to both.

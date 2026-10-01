@@ -117,7 +117,7 @@ export const DotEnvFirst = ConfigProvider.layerAdd(
 
 ## Errors
 
-A failed read is a `ConfigError` whose message wraps the schema error and names the path, for example `SchemaError(Expected string\n  at ["HOST"])` for a missing `HOST`. Read config in layers, so this error stops the app at startup and names the key.
+A failed read is a `ConfigError` whose message wraps the schema error and names the path, for example `SchemaError(Expected string\n  at ["HOST"])` for a missing `HOST`. Read config in layers, so the error names the key and fails the layer build. When the build happens depends on the entry point: `NodeRuntime.runMain` and `Layer.launch` build at startup, but `ManagedRuntime.make` builds at the first run. With a `ManagedRuntime`, await `runtime.runPromise(Effect.void)` before the server accepts traffic, so a bad config stops startup instead of failing the first request.
 
 ## Tests
 

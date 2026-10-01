@@ -7,6 +7,8 @@ description: Effect 4 Schema for parsing and modelling data. Use when you decode
 
 Checked against `effect 4.0.0`. When the project has a newer version, search `node_modules/effect/src/Schema.ts` (it is large: search for the name, read the match), `SchemaGetter.ts`, `SchemaTransformation.ts` and `SchemaIssue.ts`, and read `node_modules/effect/AGENTS.md`. The installed source wins over this skill.
 
+Schema needs `"strict": true` in `tsconfig.json`. Turn on `"exactOptionalPropertyTypes": true` as well: without it, the type of a `Schema.optionalKey` field accepts `undefined`, which decoding still rejects.
+
 ## The model
 
 A schema is a value that describes data in two forms: `Type`, the value your code uses, and `Encoded`, the value on the wire or on disk. Its full type is `Codec<Type, Encoded, DecodingServices, EncodingServices>`.
@@ -108,18 +110,17 @@ export class PaymentDeclined extends Schema.TaggedError<PaymentDeclined>()("Paym
   reason: Schema.Literals(["insufficient_funds", "card_expired"])
 }) {}
 
-export const charge = (orderId: string): Effect.Effect<string, PaymentDeclined> =>
-  Effect.gen(function* () {
-    if (orderId.startsWith("x")) return yield* new PaymentDeclined({ orderId, reason: "card_expired" })
-    return `receipt-${orderId}`
-  })
+export const charge = Effect.fn("charge")(function* (orderId: string): Effect.fn.Return<string, PaymentDeclined> {
+  if (orderId.startsWith("x")) return yield* new PaymentDeclined({ orderId, reason: "card_expired" })
+  return `receipt-${orderId}`
+})
 
 export const handled = charge("x1").pipe(
   Effect.catchTag("PaymentDeclined", (e) => Effect.succeed(`declined: ${e.reason}`))
 )
 ```
 
-- Write `return yield* new PaymentDeclined({ ... })` inside `Effect.gen`. The `return` tells TypeScript the branch ends.
+- Write `return yield* new PaymentDeclined({ ... })` inside the generator. The `return` tells TypeScript the branch ends.
 - An instance is an `Error` with a stack. Its `name` is the tag. Its `message` is empty unless you declare a `message` field.
 - It is also a schema: it encodes to `{ _tag, ...fields }` and decodes back to an instance. Use it for errors that cross a boundary: RPC, HTTP bodies, worker messages, stored jobs.
 - Store a caught exception in a field with `Schema.Defect()`, which encodes an `Error` as `{ name, message }`.
@@ -162,6 +163,7 @@ export const Cents = Schema.String.pipe(
 - Use a built-in before writing one: `FiniteFromString`, `DateFromString`, `DateTimeUtcFromString`, `Trim`, `fromJsonString`, `OptionFromNullOr`, `RedactedFromValue`.
 - Write `SchemaTransformation.transform({ decode, encode })` when neither direction can fail. Write `SchemaGetter.transformEffect` for a step that can fail, is asynchronous or needs a service, and fail with `new SchemaIssue.InvalidValue({ message })`. Version 4.0.0 has no `SchemaGetter.transformOrFail`.
 - A service used in a transformation appears in `DecodingServices` and in the `R` of `decodeUnknownEffect`.
+- Effectful steps inside a struct, tuple or array run one at a time. Pass `{ concurrency: n }` to the decoder to run up to `n` together.
 - Map snake_case wire keys with `Schema.encodeKeys({ userId: "user_id" })` on the struct.
 - `Schema.withDecodingDefault` fills a missing key while decoding. `Schema.withConstructorDefault` fills it only in `make` and `new`; decoding still requires the key.
 
@@ -181,7 +183,8 @@ The issue model, message precedence and an HTTP 400 example: [references/effect-
 
 - To hand an Effect schema to a library that accepts Standard Schema (a form library, a router, a tRPC procedure), pass `Schema.toStandardSchemaV1(S)`. It reports all issues, returns a `Promise` when the schema is asynchronous, and requires `DecodingServices` to be `never`. It adds `~standard` to `S` itself and returns the same object, so a second call ignores its options: call it once, where you define a schema you own.
 - To decode with a zod schema inside Effect, 4.0.0 has no built-in importer. Wrap `schema["~standard"].validate` in a small adapter that fails with a tagged error: [references/effect-schema-interop.md](references/effect-schema-interop.md).
-- In a project that already uses zod, keep the zod schemas at the boundaries that have them and adapt them. Write new schemas with Effect Schema, and convert one module at a time. Validate a value with one library, not both.
+- `toStandardSchemaV1` serves Standard Schema consumers only. A consumer written for zod (`zodResolver`, a zod-only router plugin) needs a real zod schema and rejects an Effect schema: keep zod there, or first move that consumer to its Standard Schema integration.
+- In a project that already uses zod, keep the zod schemas at the boundaries that have them and adapt them. Write new schemas with Effect Schema where every consumer accepts Standard Schema, and convert one module at a time. Validate a value with one library, not both.
 
 ## Review
 
