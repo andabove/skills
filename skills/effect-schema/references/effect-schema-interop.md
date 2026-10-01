@@ -11,7 +11,7 @@ Reference for [effect-schema](../SKILL.md). Checked against `effect 4.0.0` and `
 `Schema.toStandardSchemaV1(S)` adds a `~standard` property (vendor `"effect"`) to `S` itself and returns the same object. Pass it wherever a library asks for a Standard Schema.
 
 ```ts
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 
 export const SignupForm = Schema.toStandardSchemaV1(
   Schema.Struct({
@@ -35,7 +35,8 @@ export const result = SignupForm["~standard"].validate({ email: "nope", password
 Effect 4.0.0 has no function that turns a foreign Standard Schema into an Effect schema. Adapt it with a decoder that returns an Effect and fails with a tagged error. The adapter stays synchronous when the schema is synchronous, so `Effect.runSync` still works.
 
 ```ts
-import { Effect, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 import type { StandardSchemaV1 } from "effect/StandardSchema"
 
 export class StandardSchemaError extends Schema.TaggedError<StandardSchemaError>()("StandardSchemaError", {
@@ -65,7 +66,7 @@ export const decodeStandard = <S extends StandardSchemaV1>(schema: S) =>
 Use it with any Standard Schema, for example zod:
 
 ```ts nocheck
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 import { z } from "zod"
 import { decodeStandard } from "./decodeStandard"
 
@@ -93,7 +94,7 @@ export const signup = (body: unknown) =>
 `Schema.toJsonSchemaDocument(S)` returns `{ dialect: "draft-2020-12", schema, definitions }` for the JSON form of `S`: its encoded side, through `Schema.toCodecJson`.
 
 ```ts
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 
 const Order = Schema.Struct({
   sku: Schema.NonEmptyString.annotate({ description: "Stock keeping unit" }),

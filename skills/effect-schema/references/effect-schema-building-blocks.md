@@ -21,7 +21,7 @@ Reference for [effect-schema](../SKILL.md). Checked against `effect 4.0.0`; sear
 ## Literals and enums
 
 ```ts
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 
 export const Role = Schema.Literals(["admin", "member", "guest"])
 export const Staff = Role.pick(["admin", "member"])
@@ -52,7 +52,7 @@ Each filter takes an optional last argument for annotations such as `{ message: 
 A custom rule is `Schema.makeFilter(predicate)`. The predicate returns `true` or `undefined` to pass, `false` or a message string to fail, or `{ path, issue }` to report the failure on a field:
 
 ```ts
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 
 export const PasswordForm = Schema.Struct({
   password: Schema.String.check(Schema.isMinLength(8)),
@@ -69,7 +69,8 @@ A predicate can return an array of such issues to report several at once. A chec
 ## Structs and optional fields
 
 ```ts
-import { Schema, Struct } from "effect"
+import * as Schema from "effect/Schema"
+import * as Struct from "effect/Struct"
 
 export const User = Schema.Struct({
   id: Schema.String,
@@ -106,7 +107,7 @@ export const WithAudit = Schema.Struct({ ...User.fields, updatedAt: Schema.DateF
 - `Schema.TaggedUnion` builds a tagged union with helpers:
 
 ```ts
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 
 export const Shape = Schema.TaggedUnion({
   Circle: { radius: Schema.Finite },
@@ -133,7 +134,7 @@ export const isCircle = Shape.guards.Circle
 ## Brands
 
 ```ts
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 
 export const UserId = Schema.String.pipe(Schema.brand("UserId"))
 export type UserId = typeof UserId.Type
@@ -153,7 +154,7 @@ A brand makes a nominal type: a plain `string` does not type check where `UserId
 - A recursive class needs an explicit type on the self reference:
 
 ```ts
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 
 export class Category extends Schema.Class<Category>("myapp/Category")({
   name: Schema.String,

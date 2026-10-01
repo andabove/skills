@@ -32,7 +32,7 @@ A `Schema.Class` constructor throws a plain `Error` with the message `Schema val
 `makeFormatterStandardSchemaV1({ leafHook })` customizes the message of each leaf issue. Delegate the cases you do not handle to `SchemaIssue.defaultLeafHook`:
 
 ```ts
-import { SchemaIssue } from "effect"
+import * as SchemaIssue from "effect/SchemaIssue"
 
 export const formatIssues = SchemaIssue.makeFormatterStandardSchemaV1({
   leafHook: (issue) => (issue._tag === "MissingKey" ? "Required" : SchemaIssue.defaultLeafHook(issue))
@@ -61,7 +61,9 @@ Pass `{ errors: "all" }` to the decoder to collect every failure. Without it, de
 ## An HTTP 400 body
 
 ```ts
-import { Effect, Schema, SchemaIssue } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
+import * as SchemaIssue from "effect/SchemaIssue"
 
 const Signup = Schema.Struct({
   email: Schema.String.check(Schema.isPattern(/^[^@]+@[^@]+$/, { message: "Enter a valid email" })),

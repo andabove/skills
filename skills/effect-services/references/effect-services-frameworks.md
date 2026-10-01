@@ -12,7 +12,11 @@ The core module, with a service, the runtime and two endpoints:
 
 ```ts
 // app/effect.ts
-import { Context, Effect, Layer, ManagedRuntime, Schema } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as ManagedRuntime from "effect/ManagedRuntime"
+import * as Schema from "effect/Schema"
 
 export class Todo extends Schema.Class<Todo>("myapp/Todo")({
   id: Schema.String,
@@ -193,7 +197,10 @@ export default defineNitroPlugin((nitroApp) => {
 Per-request data (the signed-in user, a request id) is not a layer. Build it in the handler and attach it with `Effect.provideService`, which costs nothing per request.
 
 ```ts
-import { Context, Effect, Layer, ManagedRuntime } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as ManagedRuntime from "effect/ManagedRuntime"
 
 export class CurrentUser extends Context.Service<CurrentUser, { readonly id: string }>()("myapp/auth/CurrentUser") {}
 

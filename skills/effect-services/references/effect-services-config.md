@@ -51,7 +51,10 @@ All of them also work in a pipe: `Config.Port("PORT").pipe(Config.withDefault(80
 `Config.schema` reads a structured value and decodes it with any schema. The provider supplies the encoded side.
 
 ```ts
-import { Config, ConfigProvider, Effect, Schema } from "effect"
+import * as Config from "effect/Config"
+import * as ConfigProvider from "effect/ConfigProvider"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 
 const Server = Config.schema(
   Schema.Struct({
@@ -98,8 +101,10 @@ To decode a secret, wrap the schema: `Config.schema(Schema.RedactedFromValue(Sch
 - `ConfigProvider.layerAdd(provider)` keeps the current provider and adds `provider` as a fallback. Pass `{ asPrimary: true }` to consult it first.
 
 ```ts
-import { NodeServices } from "@effect/platform-node"
-import { ConfigProvider, Effect, Layer } from "effect"
+import * as NodeServices from "@effect/platform-node/NodeServices"
+import * as ConfigProvider from "effect/ConfigProvider"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 
 // .env values first, then the process environment; no .env file means no extra values
 export const DotEnvFirst = ConfigProvider.layerAdd(
@@ -117,7 +122,9 @@ A failed read is a `ConfigError` whose message wraps the schema error and names 
 ## Tests
 
 ```ts
-import { Config, ConfigProvider, Effect } from "effect"
+import * as Config from "effect/Config"
+import * as ConfigProvider from "effect/ConfigProvider"
+import * as Effect from "effect/Effect"
 
 const Port = Config.Port("PORT").pipe(Config.withDefault(8080))
 

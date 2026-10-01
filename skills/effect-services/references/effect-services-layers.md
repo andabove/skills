@@ -24,7 +24,9 @@ Version 4 has no `Layer.scoped` and no `Layer.function`. `Layer.effect` covers s
 ## Combinators
 
 ```ts
-import { Context, Effect, Layer } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 
 class Now extends Context.Service<Now, { readonly now: Effect.Effect<number> }>()("myapp/Now") {
   static readonly layer = Layer.succeed(Now, Now.of({ now: Effect.sync(() => Date.now()) }))
@@ -79,7 +81,10 @@ The names below are a convention, not an API. Keep them consistent in a codebase
 ## Choose an implementation at build time
 
 ```ts
-import { Config, Context, Effect, Layer } from "effect"
+import * as Config from "effect/Config"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 
 export class Store extends Context.Service<Store, {
   get(key: string): Effect.Effect<string | undefined>
@@ -107,7 +112,8 @@ export class Store extends Context.Service<Store, {
 `Layer.effectDiscard` with `Effect.forkScoped` starts a fiber when the layer is built and interrupts it when the layer closes. Put the cleanup that must run on the scope, because a fiber interrupted before it starts runs none of its body.
 
 ```ts
-import { Effect, Layer } from "effect"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 
 export const Heartbeat = Layer.effectDiscard(
   Effect.gen(function* () {
@@ -129,7 +135,10 @@ export const Heartbeat = Layer.effectDiscard(
 Use `LayerMap.Service` when a resource exists per key, such as one pool per tenant. It builds a key's layer on first use, reuses it, and releases it after `idleTimeToLive` without use or on `invalidate`.
 
 ```ts
-import { Context, Effect, Layer, LayerMap } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as LayerMap from "effect/LayerMap"
 
 class TenantDb extends Context.Service<TenantDb, { readonly tenant: string }>()("myapp/TenantDb") {
   static readonly layer = (tenant: string) =>

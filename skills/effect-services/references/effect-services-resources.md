@@ -15,7 +15,8 @@ A `Scope` is a lifetime with a list of finalizers. Closing the scope runs its fi
 ## acquireRelease
 
 ```ts
-import { Effect, Exit } from "effect"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
 
 interface Lock { readonly id: string }
 declare const takeLock: (name: string) => Promise<Lock>
@@ -51,7 +52,9 @@ export const job = Effect.scoped(
 Give each step a release that undoes it only when the scope closes with a failure. If a later step fails, the earlier steps undo in reverse order.
 
 ```ts
-import { Effect, Exit, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import * as Schema from "effect/Schema"
 
 class StepFailed extends Schema.TaggedError<StepFailed>()("StepFailed", { step: Schema.String }) {}
 
@@ -93,7 +96,9 @@ export const createWorkspace = Effect.scoped(
 ## Manual scopes
 
 ```ts
-import { Effect, Exit, Scope } from "effect"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import * as Scope from "effect/Scope"
 
 export const program = Effect.gen(function* () {
   const scope = yield* Scope.make()

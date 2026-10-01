@@ -19,7 +19,8 @@ A schema is a value that describes data in two forms: `Type`, the value your cod
 ## Decode untrusted input
 
 ```ts
-import { Effect, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 
 export const CreateOrder = Schema.Struct({
   sku: Schema.NonEmptyString,
@@ -69,7 +70,8 @@ Before you send or store a decoded value, encode it with the same schema: `Schem
 ## Schema.Class: a domain model
 
 ```ts
-import { Equal, Schema } from "effect"
+import * as Equal from "effect/Equal"
+import * as Schema from "effect/Schema"
 
 export class Customer extends Schema.Class<Customer>("myapp/Customer")({
   id: Schema.String,
@@ -98,7 +100,8 @@ Equal.equals(customer, new Customer({ ...customer })) // true
 ## Schema.TaggedError: a typed, serializable error
 
 ```ts
-import { Effect, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 
 export class PaymentDeclined extends Schema.TaggedError<PaymentDeclined>()("PaymentDeclined", {
   orderId: Schema.String,
@@ -128,7 +131,11 @@ export const handled = charge("x1").pipe(
 `Source.pipe(Schema.decodeTo(Target, transformation))` decodes with `Source`, runs your decode step, then decodes with `Target`. Encoding runs the same path backwards.
 
 ```ts
-import { Effect, Schema, SchemaGetter, SchemaIssue, SchemaTransformation } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
+import * as SchemaGetter from "effect/SchemaGetter"
+import * as SchemaIssue from "effect/SchemaIssue"
+import * as SchemaTransformation from "effect/SchemaTransformation"
 
 // infallible both ways
 export const Toggle = Schema.Literals(["on", "off"]).pipe(

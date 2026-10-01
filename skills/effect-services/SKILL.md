@@ -23,7 +23,10 @@ Cut services by capability, one per boundary (`UserRepo`, `Mailer`, `Payments`).
 ## Define a service
 
 ```ts
-import { Context, Effect, Layer, Schema } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
 
 export class UserNotFound extends Schema.TaggedError<UserNotFound>()("UserNotFound", {
   userId: Schema.String
@@ -61,7 +64,8 @@ export class UserRepo extends Context.Service<UserRepo, {
 Use `Context.Reference` for a setting, a feature flag or a per-request value with a sensible default. It adds nothing to `R`: code reads the default until something provides another value.
 
 ```ts
-import { Context, Effect } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
 
 export const NewCheckout = Context.Reference<boolean>("myapp/flags/NewCheckout", {
   defaultValue: () => false
@@ -90,7 +94,11 @@ A `Layer<Out, E, In>` builds the services `Out`, can fail with `E`, and needs `I
 - `Layer.mergeAll(a, b, c)` sets independent layers side by side. Their inputs add up.
 
 ```ts
-import { Config, Context, Effect, Layer, Redacted } from "effect"
+import * as Config from "effect/Config"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Redacted from "effect/Redacted"
 
 interface Pool {
   query(text: string): Promise<ReadonlyArray<unknown>>
@@ -159,7 +167,7 @@ Manual scopes, rollback on failure and finalizer helpers: [references/effect-ser
 A `Config<A>` describes how to read and decode one value. It is also an Effect, so `yield*` it. With no provider installed, it reads a copy of `process.env` taken at the first config read; later changes to `process.env` are not seen.
 
 ```ts
-import { Config } from "effect"
+import * as Config from "effect/Config"
 
 // reads SMTP_HOST, SMTP_PORT and SMTP_PASSWORD; yield* it in a layer constructor
 export const MailConfig = Config.all({
@@ -185,8 +193,10 @@ Choose by who owns the process entry point.
 **You own it** (a script, a worker, a server you start): express the app as layers and hand it to `NodeRuntime.runMain` from `@effect/platform-node`. On SIGINT or SIGTERM it interrupts the program and runs every finalizer. On failure it logs the cause and exits with code 1.
 
 ```ts
-import { NodeRuntime } from "@effect/platform-node"
-import { Console, Effect, Layer } from "effect"
+import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
+import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 
 const Worker = Layer.effectDiscard(
   Effect.forkScoped(Effect.forever(Console.log("tick").pipe(Effect.delay("1 second"))))
@@ -200,7 +210,11 @@ For a program that ends, write `NodeRuntime.runMain(main.pipe(Effect.provide(App
 **A framework owns it** (Hono, Express, Next.js, Nitro, a queue consumer): make one `ManagedRuntime` from the app layer at module scope, and run each handler's effect through it.
 
 ```ts
-import { Context, Effect, Layer, ManagedRuntime, Schema } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as ManagedRuntime from "effect/ManagedRuntime"
+import * as Schema from "effect/Schema"
 
 class TodoNotFound extends Schema.TaggedError<TodoNotFound>()("TodoNotFound", { id: Schema.String }) {}
 

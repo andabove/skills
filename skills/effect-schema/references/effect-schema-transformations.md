@@ -11,7 +11,8 @@ Reference for [effect-schema](../SKILL.md). Checked against `effect 4.0.0`; the 
 - When `Source.Type` already equals `Target.Encoded`, omit the transformation: `Source.pipe(Schema.decodeTo(Target))` chains the two schemas.
 
 ```ts
-import { Schema, SchemaTransformation } from "effect"
+import * as Schema from "effect/Schema"
+import * as SchemaTransformation from "effect/SchemaTransformation"
 
 const CommaList = Schema.String.pipe(
   Schema.decodeTo(
@@ -53,7 +54,10 @@ The website's `SchemaGetter.transformOrFail` does not exist in 4.0.0. Write `Sch
 Fail a step with a `SchemaIssue`. `new SchemaIssue.InvalidValue({ message })` is the usual one; its message becomes the `SchemaError` message at that path.
 
 ```ts
-import { Effect, Schema, SchemaGetter, SchemaIssue } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
+import * as SchemaGetter from "effect/SchemaGetter"
+import * as SchemaIssue from "effect/SchemaIssue"
 
 const Color = Schema.Literals(["red", "green", "blue"])
 
@@ -75,7 +79,12 @@ export const ColorFromAnyCase = Schema.String.pipe(
 A service read in a step joins the schema's `DecodingServices` (or `EncodingServices`). `Schema.decodeUnknownEffect` then requires it in `R`, and the Sync, Result and Promise decoders no longer accept the schema.
 
 ```ts
-import { Context, Effect, Layer, Schema, SchemaGetter, SchemaIssue } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
+import * as SchemaGetter from "effect/SchemaGetter"
+import * as SchemaIssue from "effect/SchemaIssue"
 
 class Accounts extends Context.Service<Accounts, {
   exists(id: string): Effect.Effect<boolean>
@@ -107,7 +116,9 @@ export const decoded = Schema.decodeUnknownEffect(AccountId)("acc_1").pipe(
 Use `Schema.decode` with `SchemaGetter.checkEffect` on a schema whose type does not change:
 
 ```ts
-import { Effect, Schema, SchemaGetter } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
+import * as SchemaGetter from "effect/SchemaGetter"
 
 declare const isUsernameFree: (name: string) => Promise<boolean>
 
@@ -126,7 +137,10 @@ export const FreeUsername = Schema.String.pipe(
 `SchemaGetter.transformOptional` receives the field as an `Option`: `None` when the key is absent. Return `None` to leave the key out of the output.
 
 ```ts
-import { Option, Predicate, Schema, SchemaGetter } from "effect"
+import * as Option from "effect/Option"
+import * as Predicate from "effect/Predicate"
+import * as Schema from "effect/Schema"
+import * as SchemaGetter from "effect/SchemaGetter"
 
 // accept null or an absent key on the wire; decode both to an absent key
 export const Profile = Schema.Struct({

@@ -23,8 +23,10 @@ Code depends on a key from `effect`. The entry point provides the platform layer
 ## FileSystem
 
 ```ts
-import { NodeServices } from "@effect/platform-node"
-import { Effect, FileSystem, Path } from "effect"
+import * as NodeServices from "@effect/platform-node/NodeServices"
+import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import * as Path from "effect/Path"
 
 export const writeReport = Effect.fn("writeReport")(function* (lines: ReadonlyArray<string>) {
   const fs = yield* FileSystem.FileSystem
@@ -52,7 +54,8 @@ export const main = writeReport(["a", "b"]).pipe(Effect.provide(NodeServices.lay
 `FileSystem.layerNoop(overrides)` gives a `FileSystem` in which you implement only the methods the test calls. Of the rest, `exists` returns `false`, reads and writes fail with a `NotFound` `PlatformError`, `remove` succeeds, and some methods such as `makeDirectory` and the temp-file methods die with `not implemented`. Override every method the code under test calls.
 
 ```ts
-import { Effect, FileSystem } from "effect"
+import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
 
 const FakeFs = FileSystem.layerNoop({
   readFileString: (path) => Effect.succeed(`contents of ${path}`)
@@ -74,8 +77,10 @@ export const test = Effect.gen(function* () {
 - `{ teardown }` replaces the default exit-code policy with `(exit, onExit) => void`.
 
 ```ts
-import { NodeRuntime, NodeServices } from "@effect/platform-node"
-import { Effect, Path } from "effect"
+import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
+import * as NodeServices from "@effect/platform-node/NodeServices"
+import * as Effect from "effect/Effect"
+import * as Path from "effect/Path"
 
 const main = Effect.gen(function* () {
   const path = yield* Path.Path
