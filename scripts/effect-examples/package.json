@@ -1,0 +1,13 @@
+{
+	"private": true,
+	"type": "module",
+	"description": "The pinned versions that scripts/check-effect-examples.mjs type checks the Effect skill examples against.",
+	"dependencies": {
+		"@effect/platform-node": "4.0.0",
+		"@effect/vitest": "4.0.0",
+		"@types/node": "^24.0.0",
+		"effect": "4.0.0",
+		"typescript": "~6.0.3",
+		"vitest": "^5.0.2"
+	}
+}
