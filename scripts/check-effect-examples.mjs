@@ -50,6 +50,10 @@ async function main() {
 	}
 	await rm(outDirectory, { recursive: true, force: true });
 	const blocks = await examples();
+	if (blocks.length === 0) {
+		process.stdout.write("type checked 0 Effect example(s)\n");
+		return;
+	}
 	const sources = new Map();
 	for (const [index, block] of blocks.entries()) {
 		const name = `${String(index).padStart(4, "0")}.ts`;
