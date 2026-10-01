@@ -19,7 +19,7 @@ Reference for [effect-streams](../SKILL.md). Checked against `effect@4.0.0`. Eve
 | `fromQueue(dequeue)`, `fromPubSub(pubsub)`, `fromPubSubTake`, `fromSubscription(subscription)` | `fromQueue` ends when the queue ends. |
 | `fromAsyncIterable(it, onError)`, `fromReadableStream({ evaluate, onError, releaseLockOnEnd })` | `onError` maps a thrown value to `E`. |
 | `fromPull`, `fromChannel`, `toChannel` | Low level. |
-| `unwrap(effect)`, `suspend(() => stream)`, `scoped(stream)`, `service(Tag)`, `serviceOption` | `unwrap` and `scoped` remove `Scope` from the requirements. |
+| `unwrap(effect)`, `suspend(() => stream)`, `scoped(stream)`, `service(Tag)`, `serviceOption` | `scoped(stream)` removes `Scope` from the stream. `unwrap(effect)` removes `Scope` only from `effect`; a `Scope` that the built stream needs stays. `suspend` builds the source again on each run. |
 
 ## Mapping and filtering
 
@@ -70,7 +70,7 @@ Reference for [effect-streams](../SKILL.md). Checked against `effect@4.0.0`. Eve
 | `groupByKey(key)`, `groupBy((a) => Effect<[K, V]>)` | Emit `[key, Stream]` pairs. Consume them with `flatMap(..., { concurrency: "unbounded" })`, or the groups block each other. |
 | `partition(filter, { capacity })`, `partitionEffect`, `partitionQueue` | Return `[passes, fails]` and need `Scope`. |
 | `transduce(sink)`, `aggregate(sink)`, `aggregateWithin(sink, schedule)` | Run a sink repeatedly and emit each result. |
-| `peel(sink)` | Runs a sink on the head, returns its result and the rest of the stream. |
+| `peel(sink)` | Runs a sink on the head, returns its result and the rest of the stream, under `Scope`. In 4.0.0 the sink's leftovers are lost: `peel(Stream.make(1, 2, 3, 4), Sink.take(2))` returned `[1, 2]` and a rest of `[]`. See the workaround in [effect-streams-sink-channel.md](effect-streams-sink-channel.md#peel-a-head-and-keep-the-rest). |
 
 ## Timing and rate
 
@@ -82,8 +82,8 @@ Reference for [effect-streams](../SKILL.md). Checked against `effect@4.0.0`. Eve
 | `timeout(duration)` | Ends quietly when no value arrives in time. |
 | `timeoutOrElse({ duration, orElse })` | Switches to `orElse()` on timeout. |
 | `buffer({ capacity, strategy })`, `bufferArray` | `capacity: "unbounded"` or a number with `"suspend"`, `"dropping"`, `"sliding"`. |
-| `interruptWhen(effect)`, `haltWhen(effect)` | Stop the stream when `effect` completes. |
-| `repeat(schedule)`, `forever`, `repeatElements(schedule)` | `repeat` replays the whole stream. |
+| `interruptWhen(effect)`, `haltWhen(effect)` | Stop the stream when `effect` completes. They act between chunks: a chunk already pulled is delivered in full. `rechunk(1)` first for an element-level stop. |
+| `repeat(schedule)`, `forever`, `repeatElements(schedule)` | `repeat` runs the whole pipeline again; an external source (an iterator, a queue) is not rewound. |
 
 ## Errors
 
@@ -99,7 +99,7 @@ Reference for [effect-streams](../SKILL.md). Checked against `effect@4.0.0`. Eve
 
 ## Sharing
 
-`broadcast(stream, { capacity, strategy, replay })` and `broadcastN({ n, capacity })` return `Effect<Stream>` or a tuple of streams under `Scope`. `share(stream, { capacity, replay, idleTimeToLive })` returns one stream that many consumers can run; the source starts with the first consumer.
+`broadcast(stream, { capacity, strategy, replay })` and `broadcastN({ n, capacity })` return `Effect<Stream>` or a tuple of streams under `Scope`; the source starts when that effect runs. `share(stream, { capacity, replay, idleTimeToLive })` returns one stream that many consumers can run; the source starts with the first consumer. In both, a consumer gets only the values produced while it is subscribed, plus the last `replay` values. With `strategy: "suspend"` (the default) the slowest consumer sets the pace; `"dropping"` and `"sliding"` let a slow consumer miss values.
 
 ## Text and bytes
 

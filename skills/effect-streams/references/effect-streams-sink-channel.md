@@ -7,7 +7,7 @@ Reference for [effect-streams](../SKILL.md). Checked against `effect@4.0.0`.
 `Sink<A, In, L, E, R>` consumes `In` values and ends with a result `A`. `L` is the type of leftovers: values it pulled but did not use. It may fail with `E` and needs `R`.
 
 - `Stream.run(stream, sink)` runs the stream into the sink and returns `Effect<A, E, R>`. Leftovers are dropped.
-- A sink that is done stops pulling. `Stream.run(endless, Sink.take(2))` pulls two values.
+- A sink that is done pulls no further chunk. `Stream.run(endless, Sink.take(2))` returns two values, but the source has produced the whole chunk they came in (measured: 4096 values from an endless iterator at the default chunk size).
 
 ### Constructors
 
@@ -54,23 +54,52 @@ The initial state of `reduce`, `fold` and their variants is a thunk, `() => 0`, 
 
 When the input ends exactly at a sink boundary, `transduce` emits one more result from an empty run. Measured: `Stream.range(1, 6).pipe(Stream.transduce(Sink.take(3)))` emits `[1, 2, 3]`, `[4, 5, 6]`, `[]`. Drop it with `Stream.filter((batch) => batch.length > 0)`, or use `Stream.grouped(n)` for fixed-size batches.
 
+`Sink.fold(() => s, continue, f)` checks `continue` after it folds each item, so the item that crosses a limit joins the batch: a soft threshold. Measured: folding while `weight < 8` over `4, 3, 5, 1, 2, 6` gave `[4, 3, 5]` (weight 12) and `[1, 2, 6]` (weight 9). For a hard ceiling, hold the batch in `Stream.mapAccum` and close it before the item that would cross the limit:
+
 ```ts
-import { Effect, Sink, Stream } from "effect"
+import * as Stream from "effect/Stream"
 
-// Batches whose total weight stays under a limit.
-const underWeight = (limit: number) =>
-  Sink.fold(
-    () => ({ items: [] as Array<number>, weight: 0 }),
-    (state) => state.weight < limit,
-    (state, item: number) => Effect.succeed({ items: [...state.items, item], weight: state.weight + item })
-  ).pipe(Sink.map((state) => state.items))
+interface Batch {
+  readonly items: ReadonlyArray<number>
+  readonly weight: number
+}
 
-export const batches = Stream.make(4, 3, 5, 1, 2, 6).pipe(
-  Stream.transduce(underWeight(8)),
-  Stream.filter((batch) => batch.length > 0),
-  Stream.runCollect
-)
+// Each batch weighs at most `limit`. An item heavier than `limit` goes alone in its own batch.
+export const batchByWeight = (limit: number) => <E, R>(self: Stream.Stream<number, E, R>) =>
+  self.pipe(
+    Stream.mapAccum(
+      (): Batch => ({ items: [], weight: 0 }),
+      (batch, item): readonly [Batch, ReadonlyArray<ReadonlyArray<number>>] =>
+        batch.items.length > 0 && batch.weight + item > limit
+          ? [{ items: [item], weight: item }, [batch.items]]
+          : [{ items: [...batch.items, item], weight: batch.weight + item }, []],
+      // Emit the last, partial batch when the input ends.
+      { onHalt: (batch) => (batch.items.length > 0 ? [batch.items] : []) }
+    )
+  )
 ```
+
+Measured with `limit` 8: `4, 3, 5, 1, 2, 6` gives `[4, 3]`, `[5, 1, 2]`, `[6]`; `8, 1, 7, 9, 2` gives `[8]`, `[1, 7]`, `[9]`, `[2]`.
+
+### Peel a head and keep the rest
+
+`Stream.peel(stream, sink)` runs `sink` on the start of `stream` and returns its result with the rest, under `Scope`. In 4.0.0 it drops the sink's leftovers: `Stream.peel(Stream.make(1, 2, 3, 4), Sink.take(2))` returned a rest of `[]`, not `[3, 4]`, because both values were in the chunk that `Sink.take` read. Carry the leftovers out with `Sink.mapEnd` and put them back in front of the rest:
+
+```ts
+import * as Effect from "effect/Effect"
+import * as Sink from "effect/Sink"
+import * as Stream from "effect/Stream"
+
+export const headAndRest = Effect.fnUntraced(function*<A>(stream: Stream.Stream<A>, n: number) {
+  const [[head, leftover], rest] = yield* Stream.peel(
+    stream,
+    Sink.take<A>(n).pipe(Sink.mapEnd(([taken, leftover]) => [[taken, leftover ?? []] as const]))
+  )
+  return [head, Stream.concat(Stream.fromIterable(leftover), rest)] as const
+})
+```
+
+Measured: on `Stream.make(1, 2, 3, 4)` with `n = 2` the rest yields `[3, 4]`. Run the rest inside the same `Scope` as the peel.
 
 ## Channel
 
@@ -78,12 +107,12 @@ export const batches = Stream.make(4, 3, 5, 1, 2, 6).pipe(
 
 You meet channels when an encoding module returns one. Plug it into a stream with `Stream.pipeThroughChannel(channel)`; the channel's input type is the stream's chunk type and its output becomes the new stream. `Stream.pipeThroughChannelOrFail` keeps the stream's own error type separate. Write a new channel (`Channel.fromTransform`, `Channel.fromPull`) only for a reusable operator that `Stream` does not already provide. `ChannelSchema.decode`, `ChannelSchema.encode` and their `Unknown` variants turn a schema into a channel over chunks.
 
-## Encoding modules (`effect/encoding`)
+## Encoding modules (`effect/encoding/*`)
 
 | Module | Channels |
 | --- | --- |
 | `Ndjson` | `decode()` (bytes), `decodeString()` (strings), `decodeSchema(schema)()`, `decodeSchemaString(schema)()`; `encode()`, `encodeString()`, `encodeSchema(schema)()`, `encodeSchemaString(schema)()`; `duplex*` for both directions. Options: `{ ignoreEmptyLines: true }`. Errors: `NdjsonError` with `kind: "Pack" \| "Unpack"`, and `SchemaError` for schema variants. |
-| `Sse` | `decode()` to `Event` values (`event`, `data`, `id`), `decodeSchema(EventCodec)`, `decodeDataSchema(schema)` (JSON-decodes `data`), `encode()`, `encodeSchema`. A `retry:` field fails the stream with a `Retry` value. |
+| `Sse` | `decode()` to `Event` values (`event`, `data`, `id`), `decodeSchema(EventCodec)`, `decodeDataSchema(schema)` (JSON-decodes `data`), `encode()`, `encodeSchema`. A `retry:` field fails the stream with a `Retry` value, after the decoder emits the complete events it parsed before it. |
 | `SchemaBinary` | A compact binary codec derived from a schema, with stream `encode` and `decode` channels. |
 
 Both `Ndjson` and `Sse` are marked `@stability unstable` in 4.0.0.
@@ -91,7 +120,9 @@ Both `Ndjson` and `Sse` are marked `@stability unstable` in 4.0.0.
 A decoding channel fails a whole chunk at once. Measured with a schema that rejects the third line: when all three lines arrive in one chunk, no row is emitted; when each line is its own chunk, the first two rows are emitted before the failure. To keep the good records, split lines yourself and decode each one:
 
 ```ts
-import { Effect, Schema, Stream } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
+import * as Stream from "effect/Stream"
 
 const Row = Schema.Struct({ id: Schema.Number })
 const decodeRow = Schema.decodeUnknownEffect(Row)
@@ -113,6 +144,6 @@ Each element of `rows` is a `Result`: the stream goes on after a bad line, and t
 
 ### Platform streams
 
-- Node: `NodeStream.fromReadable({ evaluate: () => readable, onError })`, `NodeStream.toReadable(stream)`, `NodeStream.fromDuplex`, `NodeStream.pipeThroughDuplex` from `@effect/platform-node`.
+- Node: `NodeStream.fromReadable({ evaluate: () => readable, onError })`, `NodeStream.toReadable(stream)`, `NodeStream.fromDuplex`, `NodeStream.pipeThroughDuplex` from `@effect/platform-node/NodeStream`.
 - Web: `Stream.fromReadableStream({ evaluate, onError })`, `Stream.toReadableStream(stream)`, `Sink.fromWritableStream`.
 - HTTP bodies, files, sockets and child processes expose streams through their own modules. See [effect-services](skill:effect-services) for the platform layers.
