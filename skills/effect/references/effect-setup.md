@@ -10,7 +10,8 @@ npm install effect
 
 With pnpm, Yarn or Bun use `pnpm add effect`, `yarn add effect` or `bun add effect`; with Deno use `deno add npm:effect`.
 
-- Every `@effect/*` package releases with the same version as `effect`. Install matching versions: `effect@4.0.0` goes with `@effect/platform-node@4.0.0` and `@effect/vitest@4.0.0`. A mismatch can load two copies of `effect`; `npm ls effect` (or `pnpm why effect`) shows them.
+- The runtime packages release with `effect` under one version: `@effect/platform-*`, `@effect/sql-*`, `@effect/ai-*`, `@effect/opentelemetry`, `@effect/atom-*` and `@effect/vitest`. Install matching versions: `effect@4.0.0` goes with `@effect/platform-node@4.0.0` and `@effect/vitest@4.0.0`. A mismatch can load two copies of `effect`; `npm ls effect` (or `pnpm why effect`) shows them.
+- Tooling is versioned on its own. On 2026-10-01 `@effect/tsgo` is `0.47.2` and `@effect/language-service` is `0.87.3`; neither has a `4.0.0` release, so a blanket "pin every `@effect/*` to 4.0.0" fails to install. Install their own latest and check their compatibility notes.
 - Install from the `latest` dist-tag. On 2026-10-01 `latest` is `4.0.0` and `rc` is `4.0.0-rc.118`, an older pre-release. Older guidance that says `effect@rc` now installs a version behind the release.
 - Most of what v3 kept in `@effect/platform`, `@effect/rpc`, `@effect/cluster` and similar packages is in `effect` itself in v4 (`effect/http`, `effect/rpc`, ...). The packages that stay separate are platform runtimes (`@effect/platform-node`, `@effect/platform-bun`, `@effect/platform-browser`), SQL drivers (`@effect/sql-*`), AI providers (`@effect/ai-*`), `@effect/opentelemetry` and `@effect/vitest`.
 

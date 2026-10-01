@@ -24,6 +24,8 @@ This skill holds the core: the `Effect` type, setup and imports, creating effect
 | `effect-adoption` | bring Effect into a Promise codebase one module at a time |
 | `effect-v3-to-v4` | meet Effect 3 code or Effect 3 API names |
 
+These eleven skills are one set and name each other: install them together. If a skill named here is missing, use **Look an API up** below.
+
 An API name that you remember from Effect 3 (`catchAll`, `Either`, `Context.Tag`, `Effect.fork`) is a migration case: load `effect-v3-to-v4` before you write it.
 
 ## The Effect type
@@ -62,7 +64,8 @@ More constructors and the callback contract: [references/effect-constructors.md]
 Use `Effect.gen` for inline code. `yield*` an effect to get its value; the first failure stops the generator.
 
 ```ts
-import { Data, Effect } from "effect"
+import * as Data from "effect/Data"
+import * as Effect from "effect/Effect"
 
 class InsufficientFunds extends Data.TaggedError("InsufficientFunds")<{
   readonly balance: number
@@ -91,7 +94,8 @@ export const program = Effect.gen(function*() {
 For a function that returns an effect, use `Effect.fn("Name")` with the function's own name. It creates a tracing span with that name when the effect runs, and adds the call site and definition site to `Cause.pretty` output. Use `Effect.fnUntraced` in hot paths and library internals, where a span costs more than it gives. Do not write a plain function that only returns `Effect.gen`.
 
 ```ts
-import { Effect, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 
 class PriceNotFound extends Schema.TaggedError<PriceNotFound>()("PriceNotFound", {
   sku: Schema.String
@@ -137,7 +141,7 @@ Build the program as one effect and run it once, where the process or the framew
 
 | Entry point | Write |
 | --- | --- |
-| a Node process (server, worker, CLI) | `NodeRuntime.runMain(program)` from `@effect/platform-node` (Bun: `BunRuntime.runMain` from `@effect/platform-bun`) |
+| a Node process (server, worker, CLI) | `NodeRuntime.runMain(program)`, imported from `@effect/platform-node/NodeRuntime` (Bun: `BunRuntime.runMain` from `@effect/platform-bun`) |
 | a long-running app built as layers | `NodeRuntime.runMain(Layer.launch(appLayer))` |
 | a framework handler or a callback API | a `ManagedRuntime` built once from the app layer (see `effect-services`) |
 | a script or a test that needs the value | `await Effect.runPromise(program)` |
@@ -154,7 +158,7 @@ Exit codes, teardown and the other run functions: [references/effect-running.md]
 
 ## Set up a project
 
-1. Install `effect`. Pin every `@effect/*` package to the same version as `effect`: in v4 they release together. Install from the `latest` tag; the `rc` tag points to an older pre-release.
+1. Install `effect`. Pin the runtime packages that release with it (`@effect/platform-*`, `@effect/sql-*`, `@effect/ai-*`, `@effect/opentelemetry`, `@effect/atom-*`, `@effect/vitest`) to the same version as `effect`. Tooling has its own versions: `@effect/tsgo` and `@effect/language-service` have no `4.0.0` release, so install their own latest and read their compatibility notes. Install `effect` from the `latest` tag; the `rc` tag points to an older pre-release.
 2. In `tsconfig.json`, set `"strict": true` and `"exactOptionalPropertyTypes": true`, a `target` of `ES2022` or later, and `"moduleResolution"` of `"NodeNext"` or `"Bundler"`. Under the old `node10` resolution TypeScript cannot resolve `effect` at all; below `ES2015`, `yield*` on an effect does not compile.
 3. Add the agent pointer to the project's `AGENTS.md` or `CLAUDE.md`, so that each agent reads the guidance for the installed version.
 
@@ -162,16 +166,16 @@ Full steps, the agent pointer text, and the editor and lint tooling: [references
 
 ## Import modules
 
-Both forms give the same API:
+Import each module from its subpath, as a namespace:
 
 ```ts
-import { Effect } from "effect"
 import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
 
 export const program = Effect.andThen(Console.log("ready"), Effect.succeed(1))
 ```
 
-The `effect` index loads every module. Cold import in Node 24.14, median of 30 fresh processes:
+The package also has an index entry point that re-exports every module under its name. It gives the same API, but it loads every module, as the measurements below show; the `effect-adoption` lint rule bans it, and no example in these skills uses it. Cold import in Node 24.14, median of 30 fresh processes:
 
 | Import | Modules loaded | Median | p90 |
 | --- | --- | --- | --- |
@@ -180,10 +184,12 @@ The `effect` index loads every module. Cold import in Node 24.14, median of 30 f
 | `effect/Effect` + `effect/Layer` + `effect/Context` | 64 | 63 ms | 72 ms |
 | `effect/Schema` | 113 | 134 ms | 157 ms |
 | `effect/Function` | 2 | 8 ms | 10 ms |
+| `@effect/platform-node` (index) | 251 | 406 ms | 430 ms |
+| `@effect/platform-node/NodeRuntime` | 65 | 64 ms | 76 ms |
 
-- Where Node loads the code without a bundler (servers, CLIs, serverless functions, tests), import subpaths: `import * as Effect from "effect/Effect"`. It saves about 155 ms of cold start.
+- Import subpaths in all code: `import * as Effect from "effect/Effect"`. Where Node loads the code without a bundler (servers, CLIs, serverless functions, tests), it saves about 155 ms of cold start. Do the same for platform packages: `import * as NodeRuntime from "@effect/platform-node/NodeRuntime"` saves about 340 ms against the `@effect/platform-node` index.
 - A bundler that does not drop unused modules of the index pays the same cost in size. esbuild 0.28 bundled `Effect.runSync` from the index into 85 KB against 24.5 KB from `effect/Effect`; Rollup 4 gave 21.3 KB for both.
-- Follow the style that the project already uses. The examples in these skills import from the index for brevity.
+- Every example in these skills uses subpath imports, so code copied from them passes the `effect-adoption` lint rule against the index import.
 
 ## House style
 

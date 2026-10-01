@@ -24,7 +24,7 @@ Checked against `effect` 4.0.0. These rules extend the house style in `SKILL.md`
 Most operators take the data first or last:
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 
 const total = Effect.succeed(40)
 
@@ -52,7 +52,7 @@ Plain `if` and loops inside `Effect.gen` are usually clearer. These operators ea
 `Match` gives an exhaustive check that a `switch` gives only with extra code.
 
 ```ts
-import { Match } from "effect"
+import * as Match from "effect/Match"
 
 type Payment =
   | { readonly _tag: "Card"; readonly last4: string }
@@ -75,7 +75,7 @@ export const describe = Match.type<Payment>().pipe(
 ## Name ids with Brand
 
 ```ts
-import { Brand } from "effect"
+import * as Brand from "effect/Brand"
 
 export type OrderId = string & Brand.Brand<"OrderId">
 export const OrderId = Brand.nominal<OrderId>()

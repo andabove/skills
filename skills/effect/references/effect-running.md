@@ -30,8 +30,11 @@ Each one takes an effect with `R = never` and starts a new root fiber.
 - `{ teardown }` replaces the exit-code logic.
 
 ```ts
-import { NodeRuntime } from "@effect/platform-node"
-import { Console, Data, Effect, Runtime } from "effect"
+import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
+import * as Console from "effect/Console"
+import * as Data from "effect/Data"
+import * as Effect from "effect/Effect"
+import * as Runtime from "effect/Runtime"
 
 class UsageError extends Data.TaggedError("UsageError")<{ readonly message: string }> {
   readonly [Runtime.errorExitCode] = 2
@@ -61,7 +64,10 @@ A framework that owns the entry point (an HTTP framework, a queue consumer, a UI
 ## Interrupting a background fiber
 
 ```ts
-import { Console, Effect, Fiber, Schedule } from "effect"
+import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as Fiber from "effect/Fiber"
+import * as Schedule from "effect/Schedule"
 
 const heartbeat = Console.log("alive").pipe(Effect.repeat(Schedule.spaced("1 second")))
 

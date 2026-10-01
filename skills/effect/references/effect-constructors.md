@@ -10,7 +10,8 @@ The question is not "sync or async" but "what happens when it goes wrong":
 - It can go wrong, and the caller must decide what to do: `Effect.try`, `Effect.tryPromise`, `Effect.callback`, `Effect.fail`. Map the failure to a tagged error in `catch`.
 
 ```ts
-import { Effect, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 
 class ConfigUnreadable extends Schema.TaggedError<ConfigUnreadable>()("ConfigUnreadable", {
   path: Schema.String,
@@ -68,7 +69,7 @@ export const fetchJson = (url: string) =>
 - Give the type parameters: TypeScript cannot infer `A` and `E` from the calls to `resume`.
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 import { readFile } from "node:fs"
 
 export const readText = (path: string) =>
@@ -91,7 +92,7 @@ export const delayed = Effect.callback<number>((resume) => {
 - **One return type for branches.** A function that returns `Effect.fail(...)` on one branch and `Effect.succeed(...)` on another infers a union of two effect types. Wrap the body in `Effect.suspend`, or annotate the return type.
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 
 export const countDown = (n: number): Effect.Effect<number> =>
   n <= 0 ? Effect.succeed(0) : Effect.suspend(() => countDown(n - 1))
