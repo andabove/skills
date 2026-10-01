@@ -37,7 +37,6 @@ import { assert, describe, it } from "@effect/vitest"
 import * as Context from "effect/Context"
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
-import * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
 
 class OutOfStock extends Data.TaggedError("OutOfStock")<{ readonly sku: string }> {}
@@ -46,65 +45,71 @@ class Stock extends Context.Service<Stock, {
   reserve(sku: string): Effect.Effect<number, OutOfStock>
 }>()("app/Stock") {}
 
-const StockTest = Layer.succeed(Stock, Stock.of({
-  reserve: (sku) => sku === "gone" ? Effect.fail(new OutOfStock({ sku })) : Effect.succeed(1)
+// The state is made inside the build, so each Effect.provide starts with one item.
+const StockTest = Layer.effect(Stock, Effect.sync(() => {
+  let left = 1
+  return Stock.of({
+    reserve: (sku) => Effect.suspend(() => left === 0 ? Effect.fail(new OutOfStock({ sku })) : Effect.succeed(--left))
+  })
 }))
 
 describe("Stock", () => {
-  it.effect("reserves an item", () =>
+  it.effect("reserves the last item", () =>
     Effect.gen(function*() {
       const stock = yield* Stock
-      assert.strictEqual(yield* stock.reserve("a1"), 1)
+      assert.strictEqual(yield* stock.reserve("a1"), 0)
     }).pipe(Effect.provide(StockTest)))
 
-  it.effect("fails with OutOfStock", () =>
+  it.effect("fails with OutOfStock when no item is left", () =>
     Effect.gen(function*() {
       const stock = yield* Stock
-      const error = yield* Effect.flip(stock.reserve("gone"))
-      assert.strictEqual(error.sku, "gone")
-      const exit = yield* Effect.exit(stock.reserve("gone"))
-      assert.deepStrictEqual(exit, Exit.fail(new OutOfStock({ sku: "gone" })))
+      yield* stock.reserve("a1")
+      const error = yield* Effect.flip(stock.reserve("a1"))
+      assert.strictEqual(error._tag, "OutOfStock")
+      assert.strictEqual(error.sku, "a1")
     }).pipe(Effect.provide(StockTest)))
 })
 ```
 
 - **Assert inside the Effect.** The test fails when the returned Effect fails, dies or throws.
-- **Get an expected error with `Effect.flip`.** It turns the error into the success value, so the test can read its fields.
-- **Compare a whole outcome with `Effect.exit`** and `assert.deepStrictEqual(exit, Exit.fail(...))`. Tagged errors with equal fields compare equal.
-- **Use the `@effect/vitest/utils` helpers** for `Exit`, `Option` and `Result`: `assertExitSuccess`, `assertExitFailure`, `assertSome`, `assertNone`, `assertSuccess`, `assertFailure`.
-- **Read logs from `TestConsole`.** In `it.effect`, `Console.log` and `Effect.log` write to the `TestConsole`, not to the terminal. Read them with `yield* TestConsole.logLines` (or `errorLines`) from `effect/testing`. `it.live` prints them.
+- **Get an expected error with `Effect.flip`, and assert its `_tag` and fields.** `Effect.flip` turns the error into the success value.
+- **Do not compare a whole failed `Exit`** with `assert.deepStrictEqual(exit, Exit.fail(error))` or `assertExitFailure`. Both compare the `Cause` and its annotations. When the code under test uses `Effect.fn`, the failure carries a stack trace annotation, and the comparison fails though the error is equal. Compare a whole `Exit` only in a test that controls the annotations.
+- **Use the `@effect/vitest/utils` helpers** for values: `assertExitSuccess`, `assertSome`, `assertNone`, `assertSuccess`, `assertFailure` (for `Result`).
+- **Read logs from `TestConsole`.** In `it.effect`, `Console.log` and `Effect.log` write to the `TestConsole`, not to the terminal. Read them with `yield* TestConsole.logLines` (or `errorLines`) from `effect/testing/TestConsole`. `it.live` prints them.
 - **Expect cleanup on timeout.** A Vitest timeout interrupts the test fiber, and its finalizers run.
 
 ## Control time with TestClock
 
-Under `it.effect`, time stands still until the test moves it. Fork the code that waits, move the clock, then join.
+Under `it.effect`, time stands still until the test moves it. Fork the code that waits, move the clock, then join. Check both sides of a deadline: the fiber is still running just before it, and done at it. A test that only moves past the deadline also passes when the code times out too early.
 
 ```ts
 import { assert, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
 import * as Option from "effect/Option"
-import { TestClock } from "effect/testing"
+import * as TestClock from "effect/testing/TestClock"
 
-it.effect("times out a slow lookup after 5 seconds", () =>
+it.effect("times out a slow lookup at 5 seconds", () =>
   Effect.gen(function*() {
     const lookup = Effect.sleep("1 minute").pipe(Effect.as("found"))
     const fiber = yield* lookup.pipe(Effect.timeoutOption("5 seconds"), Effect.forkChild)
-    yield* TestClock.adjust("5 seconds")
+    yield* TestClock.adjust("4999 millis")
+    assert.isUndefined(fiber.pollUnsafe())
+    yield* TestClock.adjust("1 millis")
     assert.deepStrictEqual(yield* Fiber.join(fiber), Option.none())
   }))
 ```
 
 - **Move the clock for every sleep.** A sleep that no test adjusts waits until the Vitest timeout. The TestClock warning is a log line, and `it.effect` sends it to the `TestConsole`, so you see only the timeout.
-- **Make fakes settle at once.** `TestClock.adjust` wakes only the sleeps that are registered when it runs. If a fake answers in a later macrotask (`setTimeout`, real I/O), the next retry delay is not registered yet; one large adjust passes over it, and the fiber never finishes. A fake that returns `Promise.reject(...)`, `Promise.resolve(...)` or an Effect lets one adjust drive every retry.
+- **Make fakes settle at once.** `TestClock.adjust` yields between sleeps and checks again for sleeps that are due, so one adjust also drives a sleep that a woken fiber registers during the adjust: one 30 ms adjust runs retries at 0, 10, 20 and 30 ms. It cannot drive a sleep that is registered after the adjust has finished. That happens when a fake answers in a later macrotask (`setTimeout`, real I/O): the adjust ends while the call is pending, the retry delay starts later, and the fiber waits. A fake that returns `Promise.reject(...)`, `Promise.resolve(...)` or an Effect settles during the adjust.
 - **Use `TestClock` only where the test clock is provided.** `it.effect`, `layer(...)` and `Effect.provide(TestClock.layer())` provide it. Under `it.live` or a plain `Effect.runPromise`, `TestClock.adjust` dies with `testClock.adjust is not a function`.
 - **Read time through `Clock` or `DateTime.now`.** They follow the test clock, and `TestClock.setTime(Date.UTC(...))` sets a date. `Date.now()` and `new Date()` read the real time.
 - **Run one step on the real clock** with `TestClock.withLive(effect)`.
 
 ## Replace a service with a test layer
 
-- **Build a fake with `Layer.succeed(Service, Service.of({ ... }))`.** For a partial fake, use `Layer.mock(Service, { ... })`: an omitted Effect member dies with `UnimplementedError` naming the method when a test calls it.
-- **Provide the layer per test** with `Effect.provide(TestLayer)` on the test's Effect. Each test gets a fresh build, so a stateful fake starts empty.
+- **Build a stateless fake with `Layer.succeed(Service, Service.of({ ... }))`.** For a partial fake, use `Layer.mock(Service, { ... })`: an omitted Effect member dies with `UnimplementedError` naming the method when a test calls it.
+- **Make a stateful fake's state inside the build,** with `Layer.effect(Service, Effect.sync(() => { let state = ...; return Service.of({ ... }) }))`, as in the example above. Then `Effect.provide(TestLayer)` on each test's Effect gives each test fresh state. A fresh build does not reset state that the layer captured from outside: with `Layer.succeed` over a module-level variable, the second test sees what the first test left.
 - **Share a layer across a block** with `layer(TestLayer)("name", (it) => { ... })` only for a resource that is costly to build or that no test changes. The block builds the layer once; a test sees the state that the tests before it left.
 - **Expose the fake's state to the test** with `Layer.provideMerge`: build the state as its own service, and merge it into the fake's layer so the test can `yield*` it and assert on it.
 - `layer(...)` adds `TestClock` and `TestConsole` unless you pass `{ excludeTestServices: true }`.

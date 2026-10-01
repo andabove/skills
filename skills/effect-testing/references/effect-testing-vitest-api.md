@@ -21,7 +21,7 @@ npm install -D vitest@^5 @effect/vitest
 | `addEqualityTesters()` | Registers an empty list of equality testers in 4.0.0. It changes nothing. |
 | Everything from `vitest` | `describe`, `expect`, `assert`, `vi`, `beforeEach`, `test`, and the rest. |
 
-`@effect/vitest/utils` has assertion helpers: `assertEquals` (by `Equal.equals`), `deepStrictEqual`, `strictEqual`, `assertTrue`, `assertFalse`, `assertInclude`, `assertMatch`, `assertInstanceOf`, `throws`, `throwsAsync`, `assertNone`, `assertSome`, `assertDefined`, `assertUndefined`, `assertSuccess`, `assertFailure` (for `Result`), `assertExitSuccess`, `assertExitFailure` (the second takes a `Cause`).
+`@effect/vitest/utils` has assertion helpers: `assertEquals` (by `Equal.equals`), `deepStrictEqual`, `strictEqual`, `assertTrue`, `assertFalse`, `assertInclude`, `assertMatch`, `assertInstanceOf`, `throws`, `throwsAsync`, `assertNone`, `assertSome`, `assertDefined`, `assertUndefined`, `assertSuccess`, `assertFailure` (for `Result`), `assertExitSuccess`, `assertExitFailure`. `assertExitFailure` takes a `Cause` and compares it whole, annotations included, so it fails for code that uses `Effect.fn`; see [SKILL.md](../SKILL.md).
 
 ## it.effect and it.live
 
@@ -103,7 +103,7 @@ it.effect("reads the fixture", ({ baseUrl }) =>
 - Use `{ concurrent: false }` in place of `describe.sequential`, `it.sequential` and `{ sequential: true }`, which Vitest 5 removed.
 - In concurrent tests, use `ctx.expect` so snapshots and assertion counts belong to the right test.
 
-## TestClock (effect/testing)
+## TestClock (effect/testing/TestClock)
 
 | API | Use |
 |---|---|
@@ -115,7 +115,7 @@ it.effect("reads the fixture", ({ baseUrl }) =>
 
 The clock starts at 0 (1970-01-01T00:00:00Z). `Clock.currentTimeMillis`, `DateTime.now`, `Effect.sleep`, timeouts, retries and schedules all read it.
 
-## TestConsole (effect/testing)
+## TestConsole (effect/testing/TestConsole)
 
 | API | Use |
 |---|---|
