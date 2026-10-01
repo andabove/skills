@@ -1,0 +1,26 @@
+name: Type check the Effect examples
+
+on:
+  pull_request:
+    paths:
+      - "skills/effect*/**"
+      - "scripts/check-effect-examples.mjs"
+      - "scripts/effect-examples/**"
+  push:
+    paths:
+      - "skills/effect*/**"
+      - "scripts/check-effect-examples.mjs"
+      - "scripts/effect-examples/**"
+
+permissions:
+  contents: read
+
+jobs:
+  examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node scripts/check-effect-examples.mjs

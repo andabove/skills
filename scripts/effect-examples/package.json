@@ -1,0 +1,18 @@
+{
+	"private": true,
+	"type": "module",
+	"description": "The pinned versions that scripts/check-effect-examples.mjs type checks the Effect skill examples against.",
+	"dependencies": {
+		"@effect/opentelemetry": "4.0.0",
+		"@effect/platform-node": "4.0.0",
+		"@effect/vitest": "4.0.0",
+		"@opentelemetry/api": "^1.9.1",
+		"@opentelemetry/exporter-trace-otlp-http": "^0.222.0",
+		"@opentelemetry/sdk-logs": "^0.222.0",
+		"@opentelemetry/sdk-trace-base": "^2.11.0",
+		"@types/node": "^24.0.0",
+		"effect": "4.0.0",
+		"typescript": "~6.0.3",
+		"vitest": "^5.0.2"
+	}
+}
