@@ -7,6 +7,8 @@ description: Effect concurrency - fibers, interruption, coordination and Schedul
 
 Checked against `effect@4.0.0`. When the project has a newer version, check each API you use in `node_modules/effect/src/<Module>.ts` and read `node_modules/effect/AGENTS.md` first. The source wins over this skill.
 
+Every example imports each module from its subpath, `import * as Effect from "effect/Effect"`. The `effect` index import also works, but it loads every module: measured on Node, 216 modules in 220 to 270 ms cold, against 64 modules in 60 to 70 ms for `effect/Effect`.
+
 Every effect runs on a fiber, a light thread that the Effect runtime schedules. Concurrency in Effect is structured: a fiber you start belongs to a parent fiber or a `Scope`, and interruption runs every finalizer before the interrupter resumes.
 
 ## Choose the tool
@@ -32,16 +34,16 @@ Reach for `Effect.all`, `Effect.forEach` and the race functions first. Fork by h
 | --- | --- | --- |
 | `concurrency` | omitted, a number, `"unbounded"` | Omitted runs one at a time, in order. A number caps the running fibers. Results keep input order in every mode. |
 | `discard` | `true` | Drops the results and succeeds with `void`. |
-| `mode` (`Effect.all` only) | `"result"` | Runs every effect to the end and returns a `Result` per effect. The combined effect does not fail. |
+| `mode` (`Effect.all` only) | `"result"` | Turns each typed failure into a `Result` and runs the rest. A defect or an interruption still ends the combined effect, and effects not yet run do not run. |
 
 When one effect fails (default mode):
 
 - Sequential: the rest never start.
-- Concurrent: the combined effect interrupts every sibling that is still running, waits for their finalizers, then fails with the first failure. Effects not yet started never start. A sibling that was about to fail is interrupted, so its error is not in the `Cause`.
-- To keep going after a failure, use `mode: "result"`, `Effect.partition` (splits successes and failures) or `Effect.validate` (collects every failure).
+- Concurrent: the first failure makes the combined effect interrupt every sibling that is still running and wait for their finalizers. Effects not yet started never start. The `Cause` starts with that first failure, and can also hold the failure of an uninterruptible sibling and a defect from a sibling's finalizer. A sibling that is interrupted before it fails adds nothing.
+- To keep going after a typed failure, use `mode: "result"`, `Effect.partition` (splits successes and failures) or `Effect.validate` (collects every failure). To keep going after defects too, map each effect through `Effect.exit` and inspect each `Exit`. An interruption of the whole call still stops everything.
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 
 declare const loadInvoice: (id: string) => Effect.Effect<{ readonly total: number }, Error>
 
@@ -87,7 +89,8 @@ When a fiber that waits on `Effect.tryPromise` or `Effect.promise` is interrupte
 - An API with no cancellation runs on after the interruption. Its result is dropped.
 
 ```ts
-import { Effect, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 
 class FetchError extends Schema.TaggedError<FetchError>()("FetchError", { cause: Schema.Defect() }) {}
 
@@ -103,7 +106,7 @@ export const getJson = Effect.fn("getJson")((url: string) =>
 Use `Effect.callback` when the call must settle before the fiber ends (a job that must confirm its cancel, a server that must close). The register function may return an effect. On interruption Effect runs that effect and the fiber ends only after it completes, so make it wait for the API's confirmation:
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 
 interface Job {
   cancel(onCancelled: () => void): void
@@ -159,7 +162,9 @@ Signatures, queue strategies and completion, and examples are in [effect-concurr
 - Schedules live in the running process. They do not persist or replay missed runs.
 
 ```ts
-import { Effect, Schedule, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schedule from "effect/Schedule"
+import * as Schema from "effect/Schema"
 
 class HttpError extends Schema.TaggedError<HttpError>()("HttpError", { status: Schema.Number }) {}
 declare const callApi: Effect.Effect<string, HttpError>

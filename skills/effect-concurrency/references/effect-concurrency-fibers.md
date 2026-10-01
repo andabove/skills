@@ -4,7 +4,7 @@ Reference for [effect-concurrency](../SKILL.md). Checked against `effect@4.0.0`.
 
 ## Fork variants
 
-All fork functions return `Effect<Fiber<A, E>, never, R>` and take `{ startImmediately?: boolean, uninterruptible?: boolean | "inherit" }`.
+All fork functions take `{ startImmediately?: boolean, uninterruptible?: boolean | "inherit" }`. `forkChild`, `forkIn` and `forkDetach` return `Effect<Fiber<A, E>, never, R>`; `forkScoped` returns `Effect<Fiber<A, E>, never, R | Scope>`.
 
 | Function | Owner | Ends when | Typical use |
 | --- | --- | --- | --- |
@@ -14,7 +14,8 @@ All fork functions return `Effect<Fiber<A, E>, never, R>` and take `{ startImmed
 | `Effect.forkDetach(effect)` | No one | It completes or is interrupted | Rare. A fiber that must outlive every scope. Keep the `Fiber` and interrupt it on shutdown. |
 
 ```ts
-import { Effect, Schedule } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schedule from "effect/Schedule"
 
 declare const refreshCache: Effect.Effect<void>
 
@@ -82,7 +83,10 @@ Each collection is created in a `Scope` and interrupts its fibers when that scop
 | `FiberHandle` | At most one fiber | `FiberHandle.run(handle, effect)` interrupts the current fiber, unless `{ onlyIfMissing: true }`. |
 
 ```ts
-import { Context, Effect, FiberMap, Layer } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as FiberMap from "effect/FiberMap"
+import * as Layer from "effect/Layer"
 
 declare const syncTenant: (tenantId: string) => Effect.Effect<void>
 
@@ -103,6 +107,35 @@ export class TenantSync extends Context.Service<TenantSync, {
 }
 ```
 
-`FiberMap.run` and `FiberHandle.run` start the new fiber without waiting for the old one to stop: measured, a replacement started while the old fiber's 20 ms finalizer was still running. When two copies must never overlap, call `FiberMap.remove(map, key)` (or `FiberHandle.clear(handle)`) first; it returns after the old fiber's finalizers finish.
+`FiberMap.run` and `FiberHandle.run` start the new fiber without waiting for the old one to stop: measured, a replacement started while the old fiber's 20 ms finalizer was still running.
+
+`FiberMap.remove(map, key)` and `FiberHandle.clear(handle)` return after the old fiber's finalizers finish. So "remove, then run" prevents overlap only when one caller restarts at a time. Two callers that restart the same key at once both pass `remove` and both `run`: measured, `start-a, start-b, stop-a`, with two copies running. When callers can compete, hold a lock for the whole remove-and-run sequence, one lock per key:
+
+```ts
+import * as Effect from "effect/Effect"
+import * as FiberMap from "effect/FiberMap"
+import * as Semaphore from "effect/Semaphore"
+
+declare const running: FiberMap.FiberMap<string>
+declare const syncTenant: (tenantId: string) => Effect.Effect<void>
+
+// One lock per tenant. The map grows with the number of tenants.
+const locks = new Map<string, Semaphore.Semaphore>()
+const lockFor = (tenantId: string) => {
+  const existing = locks.get(tenantId)
+  if (existing) return existing
+  const created = Semaphore.makeUnsafe(1)
+  locks.set(tenantId, created)
+  return created
+}
+
+// The old sync stops before the new one starts, even when restarts compete.
+export const restart = (tenantId: string) =>
+  lockFor(tenantId).withPermit(
+    FiberMap.remove(running, tenantId).pipe(Effect.andThen(FiberMap.run(running, tenantId, syncTenant(tenantId))))
+  )
+```
+
+For a `FiberHandle`, one `Semaphore.make(1)` around `clear` and `run` does the same.
 
 `FiberSet.join(set)` fails with the first failure of any fiber in the set. `FiberSet.awaitEmpty(set)` waits until the set is empty. `FiberSet.makeRuntime` and `FiberSet.makeRuntimePromise` return a function that runs effects from non-Effect callbacks into the set.

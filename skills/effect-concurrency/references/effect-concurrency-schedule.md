@@ -46,7 +46,7 @@ A schedule counts recurrences after the first run. Measured with `TestClock`:
 | `Schedule.cron(expression, timeZone?)` or `Schedule.cron(cron)` | To the next matching time | Delay |
 | `Schedule.forever` | None, never stops | Count |
 | `Schedule.once` | None, one recurrence | `void` |
-| `Schedule.during(d)` | None, recurs while elapsed time is under `d` | Elapsed |
+| `Schedule.during(d)` | None; recurs while elapsed time is at most `d`, and stops once it exceeds `d` | Elapsed |
 | `Schedule.duration(d)` | `d`, one recurrence | `d` |
 
 Measured starts: with a 2 minute action and a 5 minute interval, `spaced` starts at 0, 7, 14, 21 minutes and `fixed` at 0, 7, 12, 17. With a 1.5 s action and a 1 s interval, `fixed` starts at 0, 2.5, 4, 5.5 s and `windowed` at 0, 2.5, 4.5, 6.5 s.
@@ -94,7 +94,10 @@ Callbacks of `while`, `tap`, `map`, `modifyDelay` and `addDelay` receive:
 ### Follow a server's Retry-After
 
 ```ts
-import { Duration, Effect, Schedule, Schema } from "effect"
+import * as Duration from "effect/Duration"
+import * as Effect from "effect/Effect"
+import * as Schedule from "effect/Schedule"
+import * as Schema from "effect/Schema"
 
 class RateLimited extends Schema.TaggedError<RateLimited>()("RateLimited", {
   retryAfterMillis: Schema.Number
@@ -116,7 +119,8 @@ export const downloadWithRetry = download.pipe(Effect.retry(policy))
 ### Poll until a job is done
 
 ```ts
-import { Effect, Schedule } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schedule from "effect/Schedule"
 
 type Status = { readonly _tag: "Pending" } | { readonly _tag: "Ready"; readonly url: string }
 declare const checkStatus: Effect.Effect<Status, Error>
@@ -133,7 +137,8 @@ export const waitForReady = checkStatus.pipe(
 ### Bound the whole operation or each attempt
 
 ```ts
-import { Effect, Schedule } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schedule from "effect/Schedule"
 
 declare const request: Effect.Effect<string, Error>
 
@@ -153,7 +158,9 @@ export const perAttempt = request.pipe(Effect.timeout("2 seconds"), Effect.retry
 - Run a cron job with `Effect.schedule(job, Schedule.cron(cron))` in a fiber you own (`Effect.forkScoped` in a layer). It waits for the first match and does not recover runs missed while the process was down.
 
 ```ts
-import { Cron, Effect, Schedule } from "effect"
+import * as Cron from "effect/Cron"
+import * as Effect from "effect/Effect"
+import * as Schedule from "effect/Schedule"
 
 declare const sendReport: Effect.Effect<void>
 
@@ -165,11 +172,13 @@ export const reportJob = Effect.gen(function*() {
 
 ## Testing schedules
 
-Provide `TestClock.layer()` from `effect/testing`, fork the scheduled effect, move time with `TestClock.adjust`, then join. Read the time inside the effect with `Clock.currentTimeMillis` to assert when each run happened. See [effect-testing](skill:effect-testing).
+Provide `TestClock.layer()` from `effect/testing/TestClock`, fork the scheduled effect, move time with `TestClock.adjust`, then join. Read the time inside the effect with `Clock.currentTimeMillis` to assert when each run happened. See [effect-testing](skill:effect-testing).
 
 ```ts
-import { Effect, Fiber, Schedule } from "effect"
-import { TestClock } from "effect/testing"
+import * as Effect from "effect/Effect"
+import * as Fiber from "effect/Fiber"
+import * as Schedule from "effect/Schedule"
+import * as TestClock from "effect/testing/TestClock"
 
 declare const flaky: Effect.Effect<string, Error>
 

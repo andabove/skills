@@ -12,7 +12,9 @@ A value that one fiber sets once and any number of fibers await.
 - `effect.pipe(Deferred.into(d))` runs `effect` and completes `d` with its outcome, including failure and interruption. `Deferred.poll` and `Deferred.isDone` check without waiting.
 
 ```ts
-import { Deferred, Effect, Fiber } from "effect"
+import * as Deferred from "effect/Deferred"
+import * as Effect from "effect/Effect"
+import * as Fiber from "effect/Fiber"
 
 export const handOff = Effect.gen(function*() {
   const ready = yield* Deferred.make<string>()
@@ -31,7 +33,7 @@ A gate. `Latch.make(open?)` starts closed by default.
 | `latch.await` | Waits until the latch is open. |
 | `latch.whenOpen(effect)` | Waits, then runs `effect`. |
 | `latch.open` / `latch.close` | Opens for every current and future waiter / closes for future waiters. |
-| `latch.release` | Lets the current waiters through and stays closed. |
+| `latch.release` | On a closed latch, lets the current waiters through and stays closed. On an open latch, does nothing and returns `false`. It never closes a latch; use `close` for that. |
 
 Use a latch to hold requests until startup finishes. Use a `Semaphore` with one permit for mutual exclusion.
 
@@ -61,14 +63,17 @@ A `Queue<A, E = never>` hands each value to one taker in offer order.
 
 | Operation | Behaviour |
 | --- | --- |
-| `Queue.offer`, `Queue.offerAll` | Return `Effect<boolean>`. `false` when the value was dropped or the queue is done. |
+| `Queue.offer(q, a)` | Returns `Effect<boolean>`: `false` when the value was dropped or the queue is done. |
+| `Queue.offerAll(q, values)` | Returns `Effect<Array<A>>`: the values the queue did not accept. `[]` means all were accepted. Measured: `offerAll` of `[1, 2, 3, 4]` on `dropping(2)` returns `[3, 4]`. Test `rejected.length`, not the array, because `[]` is truthy. |
 | `Queue.offerUnsafe(q, a)` | Synchronous offer for callbacks outside Effect. |
 | `Queue.take` | Waits for one value. |
 | `Queue.takeAll` | Waits for at least one value, then takes every buffered value. It does not return an empty array. |
-| `Queue.takeN(q, n)` | Waits for exactly `n` values. |
-| `Queue.takeBetween(q, min, max)` | Waits for `min`, takes up to `max`. |
+| `Queue.takeN(q, n)` | Takes up to `n` values. It waits for `n`, or for `capacity` values when `n` is larger than the queue's capacity. |
+| `Queue.takeBetween(q, min, max)` | Waits for `min` (or `capacity`, if smaller), takes up to `max`. |
 | `Queue.poll`, `Queue.clear` | Do not wait. `poll` returns an `Option`; `clear` returns the buffered values, possibly none. |
 | `Queue.size`, `Queue.isFull` | Read the state. |
+
+`takeN` and `takeBetween` return short batches in two cases. Measured: on an open `bounded(2)` queue, `takeN(q, 5)` returned `[1, 2]`; on an ended queue that held one value, `takeN(q, 3)` and `takeBetween(q, 3, 5)` returned `[1]`. When you need exactly `n`, check `batch.length` or accumulate across takes.
 
 ### Completion
 
@@ -90,13 +95,14 @@ A queue that can end carries `Cause.Done` in its error type: `Queue.bounded<A, C
 `Queue.Enqueue<A, E>` allows only offers and completion; `Queue.Dequeue<A, E>` allows only takes. A `Queue` is both. Type a producer's parameter as `Enqueue` and a consumer's as `Dequeue`. `Queue.asEnqueue` and `Queue.asDequeue` narrow the type only.
 
 ```ts
-import { Cause, Effect, Queue } from "effect"
+import * as Cause from "effect/Cause"
+import * as Effect from "effect/Effect"
+import * as Queue from "effect/Queue"
 
-const produce = (queue: Queue.Enqueue<number, Cause.Done>) =>
-  Effect.gen(function*() {
-    yield* Queue.offerAll(queue, [1, 2, 3])
-    yield* Queue.end(queue)
-  })
+const produce = Effect.fnUntraced(function*(queue: Queue.Enqueue<number, Cause.Done>) {
+  yield* Queue.offerAll(queue, [1, 2, 3])
+  yield* Queue.end(queue)
+})
 
 export const pipeline = Effect.gen(function*() {
   const queue = yield* Queue.bounded<number, Cause.Done>(16)
@@ -125,7 +131,8 @@ A `PubSub<A>` gives every published value to every current subscriber.
 | `Ref.get`, `Ref.set` | The value / `void`. |
 | `Ref.update(ref, f)`, `Ref.updateAndGet`, `Ref.getAndUpdate` | `void` / new value / old value. |
 | `Ref.modify(ref, (a) => [result, next])` | `result`, and stores `next`, in one step. |
-| `Ref.updateSome`, `Ref.modifySome` | Change only when the function returns `Option.some`. |
+| `Ref.updateSome(ref, (a) => Option<A>)` | `void`. Stores the value when the function returns `Option.some(next)`; keeps the state on `Option.none()`. |
+| `Ref.modifySome(ref, (a) => [result, Option<A>])` | `result`. The function returns a tuple; the second item is `Option.some(next)` to store `next`, or `Option.none()` to keep the state. |
 
 Each function is atomic. A read, a yield and a write are not: 100 concurrent fibers that `get`, yield, then `set` left a counter at 1, while 100 `Ref.update` calls left it at 100.
 
@@ -140,7 +147,9 @@ The same API as `Ref`, plus effectful updates that run one at a time: `Synchroni
 The `SynchronizedRef` API plus `SubscriptionRef.changes(ref)`, a `Stream<A>` that emits the current value first and then every change. Each run of the stream is a new subscriber. Use it for state that a UI or another fiber watches.
 
 ```ts
-import { Effect, Stream, SubscriptionRef } from "effect"
+import * as Effect from "effect/Effect"
+import * as Stream from "effect/Stream"
+import * as SubscriptionRef from "effect/SubscriptionRef"
 
 export const watchStatus = Effect.gen(function*() {
   const status = yield* SubscriptionRef.make<"idle" | "busy">("idle")
