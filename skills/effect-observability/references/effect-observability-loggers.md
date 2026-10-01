@@ -110,17 +110,16 @@ import * as Effect from "effect/Effect"
 import * as Logger from "effect/Logger"
 import * as References from "effect/References"
 
-export const captureLogs = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
-  Effect.gen(function*() {
-    const entries: Array<{ level: string; message: ReadonlyArray<unknown>; annotations: Record<string, unknown> }> = []
-    const capture = Logger.make((options) => {
-      entries.push({
-        level: options.logLevel,
-        message: options.message as ReadonlyArray<unknown>,
-        annotations: options.fiber.getRef(References.CurrentLogAnnotations)
-      })
+export const captureLogs = Effect.fnUntraced(function*<A, E, R>(effect: Effect.Effect<A, E, R>) {
+  const entries: Array<{ level: string; message: ReadonlyArray<unknown>; annotations: Record<string, unknown> }> = []
+  const capture = Logger.make((options) => {
+    entries.push({
+      level: options.logLevel,
+      message: options.message as ReadonlyArray<unknown>,
+      annotations: options.fiber.getRef(References.CurrentLogAnnotations)
     })
-    const result = yield* effect.pipe(Effect.provide(Logger.layer([capture])))
-    return { result, entries }
   })
+  const result = yield* effect.pipe(Effect.provide(Logger.layer([capture])))
+  return { result, entries }
+})
 ```

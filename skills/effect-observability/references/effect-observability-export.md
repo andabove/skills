@@ -56,9 +56,9 @@ export const ObservabilityLive = Otlp.layerFromConfig().pipe(
 
 ### Delivery
 
-- The exporters buffer in memory and post in the background. They retry a failed post up to 3 times (a `429` waits for `Retry-After`), then drop that batch and stop exporting for 60 seconds, with only a `Debug` log. The program is not affected: a run with the collector down still succeeds.
+- The exporters buffer in memory and post in the background. They retry a failed post up to 3 times (a `429` waits for `Retry-After`), then drop that batch and disable the exporter, with only a `Debug` log. While disabled, the exporter drops every new record. It re-enables only when an export runs (the next `exportInterval` tick, or an explicit flush) at least 60 seconds after the failure; time passing alone does not re-enable it. The program is not affected: a run with the collector down still succeeds.
 - When the layer's scope closes, the exporters flush, waiting up to `shutdownTimeout`. With the collector down, process exit waits that long; lower it for CLIs.
-- A process that never closes the layer (a serverless function with a long-lived `ManagedRuntime`) must flush at the end of each invocation. The per-signal layers provide `OtlpExporter.Flusher`:
+- A process that never closes the layer (a serverless function with a long-lived `ManagedRuntime`) must flush in each invocation. The per-signal layers provide `OtlpExporter.Flusher`. Flush at the start as well as the end: after a collector outage, a start flush re-enables the exporter before the invocation records anything, where an end-only flush comes too late and the invocation's telemetry is dropped. (Tested with a long `exportInterval` and a real 61-second wait; a real serverless freeze was not tested.)
 
 ```ts
 import * as Effect from "effect/Effect"
@@ -84,12 +84,28 @@ const flush = Effect.gen(function*() {
 declare const work: (event: unknown) => Effect.Effect<string>
 
 export const handler = (event: unknown) =>
-  runtime.runPromise(work(event).pipe(Effect.withSpan("thumbnailer.invoke"), Effect.ensuring(flush)))
+  runtime.runPromise(
+    flush.pipe(
+      Effect.andThen(work(event).pipe(Effect.withSpan("thumbnailer.invoke"))),
+      Effect.ensuring(flush)
+    )
+  )
 ```
 
 ## `@effect/opentelemetry`: when an OpenTelemetry SDK runs already
 
-Install `@effect/opentelemetry` at the same version as `effect`, and the OpenTelemetry packages the project already uses (`@opentelemetry/api` 1.x, SDK 2.x, logs and experimental packages 0.2xx; they are optional peers). Keep one SDK per process: let the existing one own providers, processors, exporters, auto-instrumentation and the service resource, and connect Effect to it.
+Install `@effect/opentelemetry` at the same version as `effect`. Its OpenTelemetry dependencies are optional peers, so install the ones the modules you import load at runtime (checked with `@effect/opentelemetry@4.0.0`, `@opentelemetry/api` 1.9, SDK 2.x, logs 0.222):
+
+| Module you import | Peers it loads |
+| --- | --- |
+| `@effect/opentelemetry/OtelTracer`, `/Resource` | `@opentelemetry/api`, `@opentelemetry/resources`, `@opentelemetry/semantic-conventions` |
+| `@effect/opentelemetry/OtelLogger` | the above, plus `@opentelemetry/api-logs`, `@opentelemetry/sdk-logs` |
+| `@effect/opentelemetry/OtelMetrics` | the above tracer peers, plus `@opentelemetry/sdk-metrics` |
+| `@effect/opentelemetry/NodeSdk` | all of the above, plus `@opentelemetry/sdk-trace-node`, even when you only trace |
+
+Import these module subpaths. The package index `@effect/opentelemetry` also loads `WebSdk`, so in a Node install without `@opentelemetry/sdk-trace-web` it fails with `ERR_MODULE_NOT_FOUND`.
+
+Keep one SDK per process: let the existing one own providers, processors, exporters, auto-instrumentation and the service resource, and connect Effect to it.
 
 ### Traces
 
@@ -150,13 +166,20 @@ When there is no SDK yet but you want OpenTelemetry processors, exporters or ven
 ```ts
 import * as NodeSdk from "@effect/opentelemetry/NodeSdk"
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http"
+import { BatchLogRecordProcessor, type LogRecordExporter } from "@opentelemetry/sdk-logs"
+import { PeriodicExportingMetricReader, type PushMetricExporter } from "@opentelemetry/sdk-metrics"
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base"
 
-export const TracingLive = NodeSdk.layer(() => ({
+// for example OTLPLogExporter and OTLPMetricExporter from the OTLP exporter packages
+declare const logExporter: LogRecordExporter
+declare const metricExporter: PushMetricExporter
+
+export const TelemetryLive = NodeSdk.layer(() => ({
   resource: { serviceName: "orders-api", serviceVersion: "1.4.0" },
   spanProcessor: new BatchSpanProcessor(new OTLPTraceExporter()),
-  // metricReader: new PeriodicExportingMetricReader({ exporter }),
-  // logRecordProcessor: new BatchLogRecordProcessor(logExporter),
+  metricReader: new PeriodicExportingMetricReader({ exporter: metricExporter }),
+  // sdk-logs 0.2xx takes an options object; a bare exporter fails at shutdown
+  logRecordProcessor: new BatchLogRecordProcessor({ exporter: logExporter }),
   shutdownTimeout: "3 seconds"
 }))
 ```

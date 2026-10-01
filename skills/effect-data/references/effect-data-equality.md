@@ -10,12 +10,12 @@ In order:
 2. `null`, `undefined` and values of different `typeof` are not equal. Other primitives compare with `===`.
 3. An object marked with `Equal.byReference` or `Equal.byReferenceUnsafe` is equal only to itself.
 4. Different hashes are not equal (`Hash.hash` runs first).
-5. `Date` compares the time, `RegExp` the source text.
+5. `Date` compares the time. `RegExp` compares source and flags (`/abc/i` is not equal to `/abc/g`).
 6. If both implement `Equal`, the result is `a[Equal.symbol](b)`. If only one does, they are not equal.
 7. Arrays and typed arrays compare by length and element. `Map` and `Set` compare entries regardless of order.
 8. Any other object compares its own keys and its prototype keys, deeply. The class is not checked: two plain classes with the same fields and no methods of their own give equal instances. (`Data` and `Schema` classes implement `Equal`, so rule 6 applies to them: a `Data.Class` instance never equals a plain object, and `Schema.Class` instances of different classes are not equal.)
 
-The result of the outer comparison is cached in a `WeakMap` per pair of objects, and each object's hash is cached per object. Do not mutate a value after it has been compared, hashed, or put in a `HashMap` or `HashSet`. Build a new value instead.
+The result of the outer comparison is cached in a `WeakMap` per pair of objects, `Date` included. The hash of each plain object, array, typed array, `Map` and `Set` is cached per object; `Date` and `RegExp` hashes are computed each time, but the cached pair result still hides a `Date` mutation. Do not mutate a value after it has been compared, hashed, or put in a `HashMap` or `HashSet`. Build a new value instead.
 
 Cyclic structures are supported.
 

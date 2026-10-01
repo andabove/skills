@@ -159,6 +159,7 @@ export const instrumentedCheckout = checkout.pipe(
 - `Metric.withAttributes(metric, { route })` makes a separate series. `Effect.provideService(Metric.CurrentMetricAttributes, { ... })` adds attributes to every metric update inside an effect. Keep attribute values to a small, fixed set: an id per user or request makes one series each.
 - `Metric.value(metric)` reads the series for the current attributes. In tests, give each test a fresh registry: `Effect.provideService(Metric.MetricRegistry, new Map())`.
 - Metrics stay in the process until an export layer reads them.
+- To count child fibers, wrap an effect in `Metric.enableRuntimeMetrics`. To track, wait for or interrupt a group of fibers you start (a set of workers, one fiber per connection), use `FiberSet` or `FiberMap`; see [effect-concurrency](skill:effect-concurrency).
 
 Constructors, states and Prometheus are in [the metrics reference](references/effect-observability-metrics.md).
 

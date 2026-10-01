@@ -20,7 +20,7 @@ Import each module from its own subpath, as every example here does: `import * a
 | A point in time | `DateTime` | `DateTime.now` reads the `Clock`, so tests control it. Use it in place of `Date` and `Date.now()`. |
 | Money or another exact decimal | `BigDecimal` | `0.1 + 0.2` is `0.30000000000000004` as a `number`, and `0.3` as a `BigDecimal`. |
 | A secret | `Redacted<A>` | Prints as `<redacted>` in `String`, `JSON.stringify` and every built-in logger. |
-| A list | `ReadonlyArray` and the `Arr` module | Reach for `Chunk` only where an API returns one (streams) or you append many times. |
+| A list | `ReadonlyArray` and the `Arr` module | Streams, sinks and `Stream.runCollect` use arrays in Effect 4. Reach for `Chunk` only for many appends or prepends, or where an API takes one (`Schema.Chunk`, `TxChunk`). |
 | A map or set keyed by value, not by reference | `HashMap`, `HashSet` | They compare keys with `Equal.equals`. Native `Map` and `Set` compare by reference. |
 | A value type with methods, or a tagged union | `Data.Class`, `Data.TaggedClass`, `Data.taggedEnum` | Constructor from one record, structural equality. Use `Schema.Class` when it crosses a boundary ([effect-schema](skill:effect-schema)). |
 | An error type | `Schema.TaggedError` or `Data.TaggedError` | See [effect-errors](skill:effect-errors). |
@@ -116,7 +116,7 @@ class Account implements Equal.Equal {
 HashSet.size(HashSet.make(new Account("a", new Date(1)), new Account("a", new Date(2)))) // 1
 ```
 
-- Treat a value as frozen once it has been compared, hashed or used as a key. `Equal.equals` caches the result per pair of objects and `Hash.hash` caches per object, so a later mutation is not seen: once `Equal.equals(c, d)` has returned `true`, it still returns `true` after `c.n = 2`.
+- Treat a value as frozen once it has been compared, hashed or used as a key. `Equal.equals` caches the result per pair of objects (`Date` included), and `Hash.hash` caches the hash of each plain object, array, `Map` and `Set` (not `Date` or `RegExp`), so a later mutation is not seen: once `Equal.equals(c, d)` has returned `true`, it still returns `true` after `c.n = 2`.
 - Tell types apart with a `_tag` field. For plain classes, equality checks own and prototype keys and their values, not the class: instances of two classes with the same fields and no methods are equal to each other and to a plain object with those fields. A `Data.Class` instance never equals a plain object, and two different `Schema.Class` classes with the same fields are not equal.
 - Opt one object out of structural comparison with `Equal.byReference(obj)` (returns a proxy) or `Equal.byReferenceUnsafe(obj)` (marks the object).
 - `===` stays reference equality. Use `Equal.equals` when you mean value equality.
@@ -195,7 +195,11 @@ import * as RequestResolver from "effect/RequestResolver"
 
 class GetUser extends Request.TaggedClass("GetUser")<{ readonly id: number }, { readonly name: string }, string> {}
 
-declare const fetchUsers: (ids: ReadonlyArray<number>) => Promise<ReadonlyMap<number, { readonly name: string }>>
+// the transport takes an AbortSignal, so an interrupted call closes its socket
+declare const fetchUsers: (
+  ids: ReadonlyArray<number>,
+  signal: AbortSignal
+) => Promise<ReadonlyMap<number, { readonly name: string }>>
 
 export class Users extends Context.Service<Users, {
   getUser(id: number): Effect.Effect<{ readonly name: string }, string>
@@ -206,7 +210,14 @@ export class Users extends Context.Service<Users, {
       const resolver = RequestResolver.make<GetUser>((entries) =>
         Effect.gen(function*() {
           const ids = [...new Set(entries.map((entry) => entry.request.id))]
-          const found = yield* Effect.tryPromise({ try: () => fetchUsers(ids), catch: () => "users backend failed" })
+          const found = yield* Effect.tryPromise({
+            try: (signal) => fetchUsers(ids, signal),
+            catch: () => "users backend failed"
+          }).pipe(
+            // bound the backend call here: interrupting a caller does not stop a started batch
+            Effect.timeout("5 seconds"),
+            Effect.catchTag("TimeoutError", () => Effect.fail("users backend timed out"))
+          )
           for (const entry of entries) {
             const user = found.get(entry.request.id)
             entry.completeUnsafe(user ? Exit.succeed(user) : Exit.fail(`no user ${entry.request.id}`))
@@ -230,7 +241,8 @@ export const loadAll = Effect.gen(function*() {
 
 - A batch holds the requests made concurrently. `Effect.forEach` without `concurrency` sends one call per request.
 - The default batch window is one scheduler yield. Widen it with `RequestResolver.setDelay`; cap the size with `RequestResolver.batchN`.
-- Complete every entry, with `entry.completeUnsafe(exit)` or `yield* Request.complete(entry, exit)`. An entry left open fails its caller with the defect "RequestResolver did not complete request". If the resolver effect fails, every entry in the batch fails with that error.
+- Complete every entry, with `entry.completeUnsafe(exit)` or `yield* Request.complete(entry, exit)`. An entry left open fails its caller with the defect "RequestResolver did not complete request". If the resolver effect fails, every entry still open in the batch fails with that error; entries it already completed keep their results.
+- Interrupting or timing out a caller after its batch has started removes only that caller: the resolver keeps running to the end. Bound the backend work inside the resolver (`Effect.timeout`, as above), and pass the `Effect.tryPromise` signal to the transport so that the timeout also closes the request.
 - A resolver receives duplicate requests. Dedupe the ids inside it, as above.
 - `RequestResolver.withCache({ capacity })` collapses concurrent duplicates and serves later calls, but it keeps every result, failures included, with no expiry: one backend error is replayed until the entry is evicted. When the backend can fail, use `RequestResolver.asCache` with a `timeToLive` function that returns `Duration.zero` for failures, or no cache.
 - `Effect.request` needs a resolver with no requirements. Build it in a `Layer` and close over the services it needs.

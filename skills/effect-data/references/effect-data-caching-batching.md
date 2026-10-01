@@ -124,6 +124,7 @@ Options, each returning a new resolver:
 
 - Only concurrent requests share a batch. `Effect.forEach(ids, get)` runs one batch per id; add `{ concurrency: "unbounded" }` or a number.
 - An entry the resolver does not complete fails its caller with the defect "Effect.request: RequestResolver did not complete request".
-- When the resolver effect fails with `E`, every entry still open in that batch fails with `E`.
+- When the resolver effect fails with `E`, every entry still open in that batch fails with `E`; entries it already completed keep their results.
+- Interrupting a caller after its batch started removes that caller only; the resolver runs on. Interrupting the resolver itself (for example `Effect.timeout` inside `runAll`) interrupts its `Effect.tryPromise` and aborts the signal passed to `try`. Forward that signal to the transport, or the HTTP request runs to its end anyway.
 - Without `withCache`, the resolver receives duplicates: five concurrent calls for ids `1, 2, 1, 3, 2` give one batch of five entries.
 - `Effect.request(request, resolver)` also accepts an `Effect` that builds the resolver; its error and requirement types join the result.

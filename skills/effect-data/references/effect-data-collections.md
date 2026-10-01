@@ -19,7 +19,7 @@ Most Effect code uses `ReadonlyArray<A>` with the `Array` module, imported as `A
 
 ## Chunk
 
-`Chunk<A>` is an immutable sequence with cheap `append`, `prepend` and `appendAll`. Streams and sinks produce chunks. Elsewhere it adds overhead without gain.
+`Chunk<A>` is an immutable sequence with cheap `append`, `prepend` and `appendAll`. In Effect 4, streams and sinks do not use it: `Stream.runCollect` and `Sink.collect` return arrays. Use a chunk for many appends or prepends, or where an API takes one (`Schema.Chunk`, `TxChunk`, `Channel.fromChunk`). Elsewhere it adds overhead without gain.
 
 - Convert at the edge with `Chunk.toReadonlyArray` (keeps the non-empty type) or `Chunk.toArray`.
 - `Chunk.fromIterable` copies. `Chunk.fromArrayUnsafe` does not copy, so the chunk changes if the array is mutated later.
