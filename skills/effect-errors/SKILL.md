@@ -20,7 +20,9 @@ Decide by the caller: if a caller can do something useful about it (retry, fall 
 ## Define errors as tagged classes
 
 ```ts
-import { Data, Effect, Schema } from "effect"
+import * as Data from "effect/Data"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 
 export class UserNotFound extends Schema.TaggedError<UserNotFound>()("UserNotFound", {
   userId: Schema.String,
@@ -71,7 +73,7 @@ Pick the narrowest operator. Each one removes what it handles from `E`.
 | observe without handling | `Effect.tapError`, `Effect.tapErrorTag`, `Effect.tapCause` |
 | give up: make it a defect | `Effect.orDie` |
 
-What each operator sees (proved against 4.0.0):
+What each operator sees when the cause holds one reason (proved against 4.0.0; for a cause with a failure and a defect, see **Mixed causes** below):
 
 | Operator | Failure | Defect | Interruption |
 | --- | --- | --- | --- |
@@ -81,18 +83,44 @@ What each operator sees (proved against 4.0.0):
 
 Traps:
 
-- `Effect.catch` does not catch defects. A throw inside `Effect.sync` or a rejection inside `Effect.promise` passes through every typed handler. Wrap code that can throw with `Effect.try` or `Effect.tryPromise` and a `catch`.
-- `Effect.ignore` and `Effect.result` keep defects. `Effect.ignoreCause` drops them; use it only where losing a bug report is acceptable.
+- `Effect.catch` does not catch a defect on its own. A throw inside `Effect.sync` or a rejection inside `Effect.promise` passes through every typed handler. Wrap code that can throw with `Effect.try` or `Effect.tryPromise` and a `catch`.
+- `Effect.ignore` and `Effect.result` keep a defect that comes alone. `Effect.ignoreCause` drops it; use it only where losing a bug report is acceptable.
 - `catchCause` and `matchCause` also see an interruption that the effect raised itself (`Effect.interrupt`). If you recover from every cause, check `Cause.hasInterruptsOnly(cause)` first and re-raise it with `Effect.failCause(cause)`. An interruption from outside the fiber cannot be caught: the handler does not run.
 - `try`/`catch` in an `Effect.gen` body does not see a failed effect (see the `effect` skill). Use the operators above.
 - Recover from defects (`catchDefect`, `catchCause`) only at a boundary: a request handler that must answer 500, a plugin host, a worker loop that must survive one bad job.
+
+### Mixed causes
+
+A cause can hold a failure and a defect at once, for example when an operation fails and its finalizer dies: `["Fail", "Die"]`. Every typed handler, and `catchDefect` too, sees the failure, recovers, and drops the defect without a trace. `Effect.retry` retries such a cause and ends with only the last `Fail`. (v3 typed handlers did not recover a cause that held a defect.)
+
+Where a lost defect matters (a cleanup that crashed, a pool that broke), check the whole cause first:
+
+```ts
+import * as Cause from "effect/Cause"
+import * as Effect from "effect/Effect"
+
+declare const job: Effect.Effect<string, "Busy">
+
+export const recovered = job.pipe(
+  Effect.catchCause((cause) => (Cause.hasDies(cause) ? Effect.failCause(cause) : Effect.succeed("fallback")))
+)
+
+export const retried = job.pipe(
+  Effect.sandbox,
+  Effect.retry({ times: 3, while: (cause) => !Cause.hasDies(cause) }),
+  Effect.catch((cause) => Effect.failCause(cause))
+)
+```
+
+Both keep `["Fail", "Die"]` in the result: measured, the guarded `catchCause` fails with both reasons, and the sandboxed retry stops after one attempt with both reasons.
 
 The full catalogue with examples, including `catchFilter`, `catchReasons`, `unwrapReason`, `firstSuccessOf`, `filterOrFail`, `validate` and `partition`: [references/effect-errors-operators.md](references/effect-errors-operators.md).
 
 ## Wrap code that throws
 
 ```ts
-import { Effect, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 
 class PaymentDeclined extends Schema.TaggedError<PaymentDeclined>()("PaymentDeclined", {
   orderId: Schema.String,
@@ -116,7 +144,8 @@ Without `catch`, `Effect.try` and `Effect.tryPromise` fail with `Cause.UnknownEr
 Retries and timeouts are error policy: put them where the caller knows the cost.
 
 ```ts
-import { Effect, Schedule } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schedule from "effect/Schedule"
 
 declare const callInventory: Effect.Effect<number, { readonly _tag: "Unavailable" } | { readonly _tag: "BadRequest" }>
 
@@ -131,7 +160,7 @@ export const stock = callInventory.pipe(
 ```
 
 - `Effect.retry({ times: n })` runs the effect at most `n + 1` times: one try and `n` retries. `Schedule.recurs(n)` counts the same way.
-- A retry sees only failures. A defect or an interruption is never retried.
+- A retry sees only failures: a cause with only a defect or an interruption is not retried. A cause with a failure and a defect is retried, and the defect is lost (see **Mixed causes**).
 - `while` (or `until`) stops on the first error that it rejects, and that error is the result. Retry only errors that a second try can fix.
 - `Schedule.exponential("100 millis")` waits 100, 200, 400 ms between tries. Add `times` or another stop: alone, it retries forever.
 - `Effect.timeout(d)` fails with `Cause.TimeoutError` (tag `"TimeoutError"`) and interrupts the source. Inside the retry, as above, each try gets its own limit; outside the retry, the limit covers all tries together.
@@ -146,7 +175,9 @@ More schedules, `retryOrElse` and the policy shapes: [references/effect-errors-r
 A `Cause<E>` holds a flat array `cause.reasons` of `Fail`, `Die` and `Interrupt` reasons. An `Exit<A, E>` is `Success` with a `value` or `Failure` with a `cause`.
 
 ```ts
-import { Cause, Effect, Exit } from "effect"
+import * as Cause from "effect/Cause"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
 
 declare const job: Effect.Effect<string, Error>
 

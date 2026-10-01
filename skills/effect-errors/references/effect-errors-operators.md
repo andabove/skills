@@ -18,7 +18,9 @@ To turn a failure into a defect with a better message, map first: `effect.pipe(E
 ## Select and handle
 
 ```ts
-import { Data, Effect, Filter } from "effect"
+import * as Data from "effect/Data"
+import * as Effect from "effect/Effect"
+import * as Filter from "effect/Filter"
 
 class Timeout extends Data.TaggedError("Timeout")<{}> {}
 class NotFound extends Data.TaggedError("NotFound")<{ readonly id: string }> {}
@@ -38,17 +40,19 @@ export const manyTags = load.pipe(
 export const sharedHandler = load.pipe(Effect.catchTag(["NotFound", "Forbidden"], () => Effect.succeed("unavailable")))
 
 export const byPredicate = load.pipe(
-  Effect.catchIf((e): e is Forbidden => e._tag === "Forbidden" && e.status === 403, () => Effect.succeed("login again"))
+  Effect.catchIf((e) => e._tag === "Forbidden" && e.status === 403, () => Effect.succeed("login again"))
 )
 
 export const byFilter = load.pipe(Effect.catchFilter(Filter.tagged("Timeout"), () => Effect.succeed("cached")))
 ```
 
+`byPredicate` uses a plain boolean predicate on purpose. Written as a refinement, `(e): e is Forbidden => e.status === 403`, it would tell TypeScript that every `Forbidden` is handled: the result type drops `Forbidden` from `E`, while a `Forbidden` with status 401 still fails at runtime. The boolean form keeps `Forbidden` in `E`.
+
 | Operator | Handles | Notes |
 | --- | --- | --- |
 | `Effect.catchTag(tag \| [tags], f)` | failures with that `_tag` | removes the tags from `E` |
 | `Effect.catchTags({ Tag: f, ... })` | failures with the listed tags | one handler per tag |
-| `Effect.catchIf(predicate, f)` | failures that match | a refinement narrows `E` |
+| `Effect.catchIf(predicate, f)` | failures that match | a refinement `(e): e is X` removes all of `X` from `E`; write it only when the check matches every `X` |
 | `Effect.catchFilter(filter, f)` | failures that a `Filter` selects | reusable selection; `Filter.tagged`, `Filter.fromPredicate` |
 | `Effect.catch(f)` | every failure | |
 | `Effect.catchEager(f)` | every failure | applies `f` at once when the effect is already a failure; otherwise the same as `catch` |
@@ -60,7 +64,8 @@ export const byFilter = load.pipe(Effect.catchFilter(Filter.tagged("Timeout"), (
 ## Errors with a reason
 
 ```ts
-import { Data, Effect } from "effect"
+import * as Data from "effect/Data"
+import * as Effect from "effect/Effect"
 
 class RateLimited extends Data.TaggedError("RateLimited")<{ readonly retryAfterSeconds: number }> {}
 class QuotaExceeded extends Data.TaggedError("QuotaExceeded")<{}> {}
@@ -136,7 +141,7 @@ If a `tap*` observer fails, its failure replaces the original one: the caller se
 
 ## Ignore
 
-- `Effect.ignore` drops the success value and every failure. Defects and interruptions still end the effect. `Effect.ignore({ log: true })` logs the failure first.
+- `Effect.ignore` drops the success value and every failure. A defect or an interruption that comes alone still ends the effect; a defect next to a failure is dropped with it. `Effect.ignore({ log: true })` logs the failure first.
 - `Effect.ignoreCause` drops everything, defects included. Use it for best-effort side work such as a metrics flush.
 
 ## Accumulate instead of failing fast
@@ -144,7 +149,7 @@ If a `tap*` observer fails, its failure replaces the original one: the caller se
 `Effect.all` and `Effect.forEach` stop at the first failure. To check every item:
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 
 const check = (n: number) => (n % 2 === 0 ? Effect.succeed(n) : Effect.fail(`${n} is odd`))
 

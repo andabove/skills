@@ -30,12 +30,15 @@ A `Cause` is flat. v3's `Sequential`, `Parallel` and `Empty` nodes are gone: a c
 | the first typed error, as an `Option` | `Cause.findErrorOption(c)` | an `Option` |
 | the first defect | `Cause.findDefect(c)` | a `Result` |
 | every failure | `c.reasons.filter(Cause.isFailReason)` | reasons; read `.error` |
-| one value to throw or log | `Cause.squash(c)` | the first failure, else the first defect, else an `Error("All fibers interrupted without error")` |
-| a readable report | `Cause.pretty(c)` | a string with every reason and its stack |
-| one `Error` per reason | `Cause.prettyErrors(c)` | an array of `Error` |
+| one value to throw or log | `Cause.squash(c)` | the first failure, else the first defect, else `Error("All fibers interrupted without error")` for interruptions, else `Error("Empty cause")` for `Cause.empty` |
+| a readable report of the errors | `Cause.pretty(c)` | a string with each failure and defect and its stack; see below for interruptions |
+| the errors as `Error` values | `Cause.prettyErrors(c)` | an array with one `Error` per failure and defect |
+| every reason, interruptions included | `c.reasons` | the full array of `Fail`, `Die` and `Interrupt` |
 | handle both outcomes of an exit | `Exit.match(exit, { onSuccess, onFailure })` | your value |
 
 `Effect.runPromise` and `Effect.runSync` throw `Cause.squash(cause)`, so a rejected promise from Effect carries only the first reason. Use `Effect.runPromiseExit` when you need all of them.
+
+`Cause.pretty` and `Cause.prettyErrors` describe errors, not the whole cause. When a cause has a failure or a defect, they leave its interruptions out: a `["Fail", "Interrupt"]` cause gives one `Error` and a one-error report. An interruption-only cause gives one `InterruptError` ("All fibers interrupted without error"), and `Cause.empty` gives `[]` and `""`. To log a cause completely, also log `c.reasons.map((r) => r._tag)`, or check `Cause.hasInterrupts(c)`.
 
 ## What Cause.pretty prints
 
@@ -50,7 +53,7 @@ The first word is the error's `name`; a tagged error uses its tag. The text afte
 
 ## How causes combine
 
-- `Effect.all` and `Effect.forEach` with concurrency stop at the first failure and interrupt the rest. Measured: two effects that fail at once give a cause with one `Fail`, not two.
+- `Effect.all` and `Effect.forEach` with concurrency stop at the first failure and interrupt the rest. An interrupted sibling adds no failure: measured, two interruptible children that both fail after 10 ms give one `Fail`. Interruption cannot stop an uninterruptible child, so it runs to the end and adds its own failure: the same test with `Effect.uninterruptible` children gives `["Fail", "Fail"]`. The same holds for a resource acquisition, which is uninterruptible. Read every `Fail` reason, not only the first, when siblings acquire resources or run uninterruptible work.
 - A finalizer that fails adds a `Die` next to the original reason. Measured: `Effect.fail("op").pipe(Effect.ensuring(Effect.die("cleanup")))` gives `["Fail", "Die"]`.
 - An `onError` handler that dies adds a `Die` the same way.
 - A failing `tap*` observer replaces the original failure (see `effect-errors-operators.md`).

@@ -16,7 +16,9 @@ Checked against `effect` 4.0.0. `Effect.retry`, `Effect.retryOrElse` and the `ti
 Measured with `{ schedule: Schedule.exponential("10 millis"), times: 3 }`: four runs, with gaps of 10, 20 and 41 ms.
 
 ```ts
-import { Data, Effect, Schedule } from "effect"
+import * as Data from "effect/Data"
+import * as Effect from "effect/Effect"
+import * as Schedule from "effect/Schedule"
 
 class HttpError extends Data.TaggedError("HttpError")<{ readonly status: number }> {}
 
@@ -40,7 +42,7 @@ This policy reads: each try may take 3 seconds; retry timeouts and transient sta
 Rules:
 
 - Decide which errors are transient and retry only those. A 400 or a validation error fails the same way each time.
-- Failures only: a defect or an interruption ends the effect at once.
+- Failures only: a cause with only a defect or an interruption ends the effect at once. A cause with a failure and a defect (a failed call whose finalizer died) is retried, and only the last `Fail` survives. To stop on defects, retry the sandboxed effect with `while: (cause) => !Cause.hasDies(cause)` (see **Mixed causes** in `SKILL.md`).
 - Retry an idempotent operation, or make it idempotent first (an idempotency key). A timeout does not tell you whether the remote side did the work.
 - Put the retry close to the call that fails, not around a whole workflow: a retry reruns everything inside it.
 
