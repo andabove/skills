@@ -23,7 +23,7 @@ Judge adoption for the codebase, not for each module alone. A team adopts Effect
 Do the steps in order. Each step ends on its done line.
 
 1. **Measure before.** Record the four [measures](#measure) for the module. Done when you have four numbers from the old code.
-2. **Move the tests to the edge.** Point the tests at the function that production calls, through its public signature. Reach its dependencies through the seams it already has, such as a client parameter, so the signature does not change. Write an abort test that checks the call's own signal (see [cancel](#cancel-reaches-the-call)). Commit the tests while they pass on the old code. Run them on the old code several times, for example five, before you claim they pass: one passing run can hide a flaky test (in one migration, a test committed as passing failed about 2 runs in 5). Done when the commit is made and every test passes on the old code in every run.
+2. **Move the tests to the edge.** Point the tests at the function that production calls, through its public signature. Reach its dependencies through the seams it already has, such as a client parameter, so the signature does not change. Write an abort test that checks the call's own signal (see [cancel](#cancel-reaches-the-call)). Commit the tests while they pass on the old code. Run them on the old code several times, for example five, before you claim they pass. One passing run can hide a flaky test. In one migration, a test committed as passing failed in about 2 runs out of 5. Done when the commit is made and every test passes on the old code in every run.
 3. **Rewrite inside the module.** Write the Effect program and the [edge](#the-edge-a-plain-async-function). Change no test file. Done when the unchanged tests pass and `tsc` passes.
 4. **Break it on purpose.** Make each break below, run the tests, and revert. Done when each break fails at least one test:
    - drop the signal from the underlying call,
@@ -125,9 +125,9 @@ For tagged errors, `catchTag`, and retry policy as error handling, see `skill:ef
 
 ## A shared route edge
 
-When many routes run programs, one helper is the edge for all of them: it runs the program on the runtime with the request's signal and maps each end to a response.
+When many routes run programs, one helper is the edge for all of them. It runs the program on the runtime with the request's signal and maps each end to a response.
 
-- **A route's own answers travel with its program.** A route that answers a close or a fault in its own way (its own code and message) gets those answers from the module that builds the program, in one value with the program. The edge takes only that value, so a route cannot drop an answer, and each test that runs the program through the edge reads the same answers. Answers passed as extra arguments of the edge can be left out, and no test fails.
+- **A route's own answers come in one value with its program.** A route can answer a close or a fault in its own way, with its own code and message. The module that builds the program returns those answers and the program as one value. The edge takes only that value, so a route cannot drop an answer, and each test that runs the program through the edge reads the same answers. Answers passed as extra arguments of the edge can be left out, and no test fails.
 
 ```ts
 import * as Effect from "effect/Effect"
@@ -155,7 +155,7 @@ export declare function runRoute<A, R>(route: AnsweredProgram<A, R>, signal: Abo
 ```
 
 - **An answer that must survive a close runs with no signal.** A signal that fires after the program's first suspension ends the run interrupted, even after an uninterruptible write (see `skill:effect-concurrency`). Such a route runs with no interrupting signal and reads the close as a value.
-- **A route that answers with a stream.** The edge covers the program until it returns, and the stream outlives it, so the edge's signal and error mapping do not reach the work that the stream drives. Give that work a runner that carries the request's signal, so a close stops the calls the stream drives. Run the save that must survive a close with no signal. Run both through the runtime, so its `dispose()` reaches them. No edge answers a fault after the first byte: the work logs its own faults. A Nitro example is in `skill:effect-services` (its frameworks reference).
+- **A route that answers with a stream.** The edge covers the program until it returns, and the stream outlives it. So the edge's signal and error mapping do not reach the work that the stream drives. Give that work a runner that carries the request's signal, so a close stops the calls the stream drives. Run the save that must survive a close with no signal. Run both through the runtime, so its `dispose()` reaches them. No edge answers a fault after the first byte, so the work logs its own faults. A Nitro example is in `skill:effect-services` (its frameworks reference).
 
 ## Import from subpaths
 
@@ -189,7 +189,7 @@ export default [
 
 ## Keep programs at the edge with a lint rule
 
-When the edge exists, a lint rule refuses a call that runs a program outside the edge files, so no module grows an edge of its own again. A rule that matches only `Effect.runPromise(...)` is easy to get around without meaning to. Make it cover each row below, and give each row a case in the rule's tests:
+When the edge exists, a lint rule refuses a call that runs a program outside the edge files, so no other module runs a program again. A rule that matches only `Effect.runPromise(...)` is easy to get around without meaning to. Make it cover each row below, and give each row a case in the rule's tests:
 
 | Way around the rule | Example |
 |---|---|
@@ -204,11 +204,11 @@ When the edge exists, a lint rule refuses a call that runs a program outside the
 
 The names that run a program in effect 4.0.0, beyond `Effect.run*` and `Effect.run*With`:
 
-- the `run*` methods of a `ManagedRuntime`: restrict the import of `effect/ManagedRuntime` to the module that makes the runtime;
-- `Runtime.makeRunMain`, and `runMain` of `@effect/platform-node/NodeRuntime` and `@effect/platform-bun/BunRuntime`;
-- `Stream.toReadableStream`, `Stream.toReadableStreamWith`, `Stream.toAsyncIterable` and `Stream.toAsyncIterableWith`, which run the stream when it is read;
-- `toWebHandler`, `toWebHandlerWith`, `toWebHandlerLayer` and `toWebHandlerLayerWith` of `effect/http/HttpEffect`, and `toWebHandler` of `effect/http/HttpRouter`;
-- `makeRuntime`, `makeRuntimePromise`, `runtime` and `runtimePromise` of `FiberSet`, `FiberMap` and `FiberHandle`, which give a run function to callbacks.
+- the `run*` methods of a `ManagedRuntime`. Restrict the import of `effect/ManagedRuntime` to the module that makes the runtime.
+- `Runtime.makeRunMain`, and `runMain` of `@effect/platform-node/NodeRuntime` and `@effect/platform-bun/BunRuntime`
+- `Stream.toReadableStream`, `Stream.toReadableStreamWith`, `Stream.toAsyncIterable` and `Stream.toAsyncIterableWith`, which run the stream when it is read
+- `toWebHandler`, `toWebHandlerWith`, `toWebHandlerLayer` and `toWebHandlerLayerWith` of `effect/http/HttpEffect`, and `toWebHandler` of `effect/http/HttpRouter`
+- `makeRuntime`, `makeRuntimePromise`, `runtime` and `runtimePromise` of `FiberSet`, `FiberMap` and `FiberHandle`, which give a run function to callbacks
 
 A key that only run-time code builds, such as `Effect["run" + name]`, is out of reach of a static rule. Say so in the rule's doc comment, and keep "a program runs only at an edge" in review.
 

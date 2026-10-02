@@ -30,7 +30,7 @@ A module-level or service-level cache on a request path has a request as its fir
 | `cachedWithTTL(load, (exit) => Exit.isSuccess(exit) ? "1 minute" : 0)` | interrupted | interrupted | a second load |
 | `Effect.uninterruptible(cachedWithTTL(load, "1 minute"))` | interrupted, after the load | the value | the value, one load |
 
-The waiting caller was never interrupted, yet it fails in the first three rows. In the second row the load runs to its end, but the interrupt is raised at the end of the region, inside the cache's exit handler, so the cache stores the interrupt. Wrap the getter: the cache then stores the value before the region ends, and only the closed caller ends interrupted.
+The waiting caller was never interrupted, yet it fails in the first three rows. In the second row, the load runs to its end. The fiber then raises the interrupt at the end of the region, inside the cache's exit handler, so the cache stores the interrupt. When you wrap the getter, the cache stores the value before the region ends, and only the closed caller ends interrupted.
 
 ```ts
 import * as Effect from "effect/Effect"
@@ -46,7 +46,7 @@ export const makeTemplateCache = Effect.map(
 )
 ```
 
-The cost: a closed request, and every waiter, waits for the load. Give the load a timeout inside it when it can hang.
+The cost is that a closed request and every waiter wait for the load. Give the load a timeout inside it when it can hang.
 
 ## Cache
 

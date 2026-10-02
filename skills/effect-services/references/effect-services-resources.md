@@ -49,9 +49,9 @@ export const job = Effect.scoped(
 
 ## Give the acquire a deadline
 
-Because the acquire is uninterruptible, a connect that never settles holds the scope for ever: a socket that closes, `runtime.dispose()` and a server stop all wait for it. Measured on 4.0.0: with a connect that never settles in a layer, `dispose()` had not returned after 500 ms.
+Because the acquire is uninterruptible, a connect call that never settles holds the scope open forever. A socket that closes, `runtime.dispose()` and a server stop all wait for it. Measured on 4.0.0: with a connect that never settles in a layer, `dispose()` had not returned after 500 ms.
 
-Bound the acquire with `Effect.timeout` inside it. The timeout still fires in the uninterruptible region, because the race under it forks the connect as an interruptible fiber. A connect that takes no signal runs on after the deadline, so close what it returns when it settles: no release holds it.
+Bound the acquire with `Effect.timeout` inside it. The timeout still fires in the uninterruptible region, because the race under it forks the connect as an interruptible fiber. A connect call that takes no signal runs on after the deadline. No release holds what it returns, so close that when it settles.
 
 ```ts
 import * as Effect from "effect/Effect"
@@ -59,7 +59,7 @@ import * as Effect from "effect/Effect"
 interface Connection {
   close(): void
 }
-// The SDK's connect takes no signal, and can wait for ever.
+// The SDK's connect takes no signal, and can wait forever.
 declare const connect: () => Promise<Connection>
 
 const connectWithin = Effect.suspend(() => {
@@ -76,7 +76,7 @@ export const connection = Effect.acquireRelease(connectWithin, (open) => Effect.
 
 Measured with a 100 ms deadline: the acquire failed with `TimeoutError` after 102 ms, a connect that settled at 300 ms was closed, and `dispose()` during a connect that never settles returned at the deadline.
 
-`Effect.acquireRelease(acquire, release, { interruptible: true })` lets an interrupt stop the acquire instead. With a connect that takes no signal, the connection then opens with no release to close it. Keep the default and the deadline.
+`Effect.acquireRelease(acquire, release, { interruptible: true })` lets an interrupt stop the acquire instead. With a connect call that takes no signal, the connection then opens with no release to close it. Keep the default and the deadline.
 
 ## Roll back a sequence on failure
 

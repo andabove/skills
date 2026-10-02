@@ -225,7 +225,7 @@ The handler's run covers the program until it returns. A route that answers with
 - A save that must survive a close runs on the runtime with no signal. Run it through `runtime.run*`, so that `dispose()` reaches it.
 - No run answers a fault after the first byte. The work logs its own fault and ends the stream with an error code.
 
-A Nitro sketch, not run like the glue above: `disconnectSignal` is the helper of the Nitro route, and `streamModel` stands for a streaming SDK that calls `onFinish` with the text so far when it ends or aborts.
+The Nitro sketch below was not run, unlike the glue above. `disconnectSignal` is the helper of the Nitro route. `streamModel` stands for a streaming SDK that calls `onFinish` with the text so far when the stream ends or aborts.
 
 ```ts nocheck
 // server/routes/reply.post.ts
@@ -240,7 +240,7 @@ export default defineEventHandler(async (event) => {
     prompt: reply.prompt,
     // 2. The call that the stream drives stops on a close.
     abortSignal: signal,
-    // 3. The save runs with no signal, so a close cannot cut it.
+    // 3. The save runs with no signal, so a close does not stop it.
     onFinish: (text: string) => runtime.runPromise(saveReply(reply.id, text)).catch(logFault)
   })
 })
@@ -282,7 +282,7 @@ Provide the signed-in user the same way, but build it only from a verified princ
 - A `ManagedRuntime` builds its layers at the first run. Await `runtime.runPromise(Effect.void)` before the server listens, so a missing config value or an unreachable dependency stops startup.
 - A server you start: on SIGTERM, stop accepting connections, wait a bounded time for open requests, then `await runtime.dispose()` whether or not they finished. Dispose interrupts runs still in flight, then closes the layers.
 - Nitro: dispose in the `close` hook, as above.
-- Dispose interrupts only the runs that the runtime made. Work started with `Effect.runPromiseExitWith(await runtime.context())`, or any other run, is not on the runtime's fibers: it runs on past the stop with closed layers. Measured on 4.0.0: of two 100 ms runs disposed at 20 ms, the `runtime.runPromiseExit` run ended interrupted, and the `runPromiseExitWith(context)` run ran to its end after its layer's release had run. Run a socket's session or other long-lived work through `runtime.run*`.
+- Dispose interrupts only the runs that the runtime made. Work started with `Effect.runPromiseExitWith(await runtime.context())`, or any other run, is not on the runtime's fibers. It runs on past the stop with closed layers. Measured on 4.0.0: of two 100 ms runs disposed at 20 ms, the `runtime.runPromiseExit` run ended interrupted, and the `runPromiseExitWith(context)` run ran to its end after its layer's release had run. Run a socket's session or other long-lived work through `runtime.run*`.
 - Serverless and Next.js: the platform can freeze or stop the process without a signal. Use resources that survive an abrupt end, such as pooled connections with idle timeouts, and do not depend on finalizers for correctness.
 
 ## Traps

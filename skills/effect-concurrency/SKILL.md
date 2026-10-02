@@ -79,7 +79,7 @@ Lifetimes, the `Fiber` API and the fiber collections are in [effect-concurrency-
 - The interrupter waits for the target's finalizers (`Effect.onInterrupt`, `Effect.ensuring`, `Effect.acquireRelease`). A slow finalizer delays the caller.
 - `Effect.timeout(duration)` interrupts the source and fails with `Cause.TimeoutError`. If the source is uninterruptible, the timeout returns only when the source ends, and still fails with `TimeoutError`: the result is lost. Keep uninterruptible regions short.
 - Mark a critical section with `Effect.uninterruptibleMask((restore) => ...)` and wrap only the waits that may stop in `restore`. `Effect.uninterruptible` protects the whole effect.
-- An uninterruptible region delays an interrupt; it does not cancel it. The region runs to its end, then the fiber ends interrupted and the region's value is dropped. So when the signal of `Effect.runPromiseExit(program, { signal })` fires after the first suspension, the `Exit` is an interrupt even when `Effect.uninterruptible` wraps the rest of the program. The region keeps a write whole, but it cannot keep an answer. A program whose answer must survive a client close runs with no interrupting signal and reads the close as a value. Example: [effect-concurrency-fibers.md](references/effect-concurrency-fibers.md#an-uninterruptible-region-does-not-keep-the-answer).
+- An uninterruptible region delays an interrupt. It does not cancel it. The region runs to its end, then the fiber ends interrupted and the region's value is dropped. So when the signal of `Effect.runPromiseExit(program, { signal })` fires after the first suspension, the `Exit` is an interrupt even when `Effect.uninterruptible` wraps the rest of the program. The region keeps a write whole, but it cannot keep an answer. A program whose answer must survive a client close runs with no interrupting signal and reads the close as a value. Example: [effect-concurrency-fibers.md](references/effect-concurrency-fibers.md#an-uninterruptible-region-does-not-keep-the-answer).
 - Interruption appears in an `Exit` as an `Interrupt` reason in the `Cause`, not as a typed error. See [effect-errors](skill:effect-errors).
 
 ## Wrap a cancellable API
@@ -91,9 +91,9 @@ When a fiber that waits on `Effect.tryPromise` or `Effect.promise` is interrupte
 
 ### A call that takes no signal
 
-Some SDKs take no abort signal, for example a database admin SDK. An interrupt cannot stop such a call, so choose for each call what the interrupt does, and give each choice its own helper so the choice is visible where the call is made:
+Some SDKs take no abort signal, for example a database admin SDK. An interrupt cannot stop such a call. So choose for each call what the interrupt does, and give each choice its own helper. Then a reader sees the choice where the call is made:
 
-- **A read stays interruptible.** A closed request stops waiting at once; the call settles to nobody.
+- **A read stays interruptible.** A closed request stops waiting at once. The call runs to its end, and nothing reads its result.
 - **A write or a transaction is uninterruptible.** A closed request waits for the commit, then ends. Otherwise the caller cannot know whether the write happened.
 - A read inside an uninterruptible region waits like a write.
 
@@ -126,7 +126,7 @@ export const rename = Effect.fn("rename")(function*(id: string, title: string) {
 })
 ```
 
-A program with two writes that must agree makes them one transaction, or wraps both in one `Effect.uninterruptible`: an interrupt can fall between two separate writes.
+An interrupt can stop a program between two separate writes. So a program with two writes that must agree makes them one transaction, or wraps both in one `Effect.uninterruptible`.
 
 ```ts
 import * as Effect from "effect/Effect"

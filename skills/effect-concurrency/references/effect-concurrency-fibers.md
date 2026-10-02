@@ -86,7 +86,7 @@ export const answerSave = (order: string, closed: AbortSignal) =>
   Effect.map(save(order), (id) => (closed.aborted ? { status: 499, id } : { status: 201, id }))
 ```
 
-With no signal, nothing interrupts the program: a step before the save that should stop on a close must race the close itself.
+With no signal, nothing interrupts the program. A step before the save that must stop on a close has to race the close itself.
 
 ## Cancellation of foreign calls
 

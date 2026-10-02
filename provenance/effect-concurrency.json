@@ -5,6 +5,7 @@
   "license": "MIT",
   "changes": [
     "2026-10-02 (ENG-3173): an uninterruptible region delays an interrupt and drops its value, so a signal after the first suspension ends the run interrupted; a program whose answer must survive a close runs with no signal",
-    "2026-10-02 (ENG-3173): a call that takes no signal - reads stay interruptible, writes and transactions are uninterruptible, each through its own helper"
+    "2026-10-02 (ENG-3173): a call that takes no signal - reads stay interruptible, writes and transactions are uninterruptible, each through its own helper",
+    "2026-10-02 (ENG-3173): writing pass with the technical-writing and unslop skills on the added text"
   ]
 }

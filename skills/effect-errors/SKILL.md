@@ -84,7 +84,7 @@ export const getItem = Effect.fn("getItem")(function*(id: string) {
 expectTypeOf(getItem).returns.toEqualTypeOf<Effect.Effect<Item, NotFound | StoreError>>()
 ```
 
-Checked with `tsc` on 4.0.0: with `NotFound` replaced by `StoreError` in the body, the declared form compiles, and the type test fails with `TS2344`. See `effect-testing` for running type tests.
+Checked with `tsc` on 4.0.0. With `NotFound` replaced by `StoreError` in the body, the declared form compiles, and the type test fails with `TS2344`. See `effect-testing` for running type tests.
 
 ## Recover
 

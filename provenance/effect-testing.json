@@ -4,6 +4,7 @@
   "origin": "original",
   "license": "MIT",
   "changes": [
-    "2026-10-02 (ENG-3173): pin public Effect signatures with expectTypeOf in a *.test-d.ts file, run by tsc or vitest --typecheck"
+    "2026-10-02 (ENG-3173): pin public Effect signatures with expectTypeOf in a *.test-d.ts file, run by tsc or vitest --typecheck",
+    "2026-10-02 (ENG-3173): writing pass with the technical-writing and unslop skills on the added text"
   ]
 }

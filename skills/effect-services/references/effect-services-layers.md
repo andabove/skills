@@ -155,7 +155,7 @@ export const Heartbeat = Layer.effectDiscard(
 
 ## Load a heavy SDK at first use
 
-A `ManagedRuntime` builds every layer at its first run. A layer module that imports a large SDK statically, or that imports it in its build, makes the first request of any kind pay for that import, a health check included. In one Node server, three model SDKs took 157 ms to import cold; after the move to first use, the first health check took 607 ms against 678 ms (medians of 20 fresh servers).
+A `ManagedRuntime` builds every layer at its first run. A layer module that imports a large SDK statically, or that imports it in its build, makes the first request of any kind pay for that import, a health check included. In one Node server, three model SDKs took 157 ms to import cold. After the move to first use, the first health check took 607 ms against 678 ms (medians of 20 fresh servers).
 
 Import only the SDK's types at the top, and run the dynamic import inside the service method. Node caches the module, so the import runs once, and concurrent first calls share it. An interrupted caller does not cancel the import.
 
