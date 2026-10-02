@@ -2,5 +2,8 @@
   "source": "andabove/skills",
   "skillPath": "skills/effect-testing/SKILL.md",
   "origin": "original",
-  "license": "MIT"
+  "license": "MIT",
+  "changes": [
+    "2026-10-02 (ENG-3173): pin public Effect signatures with expectTypeOf in a *.test-d.ts file, run by tsc or vitest --typecheck"
+  ]
 }

@@ -2,5 +2,8 @@
   "source": "andabove/skills",
   "skillPath": "skills/effect/SKILL.md",
   "origin": "original",
-  "license": "MIT"
+  "license": "MIT",
+  "changes": [
+    "2026-10-02 (ENG-3173): Effect.fn.Return stops widening but hides a narrowed error type; point to inference and a type test"
+  ]
 }

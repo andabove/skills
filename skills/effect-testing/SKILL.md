@@ -116,6 +116,26 @@ it.effect("times out a slow lookup at 5 seconds", () =>
 
 For services, layers and `Layer.provideMerge`, see `skill:effect-services`.
 
+## Pin public signatures with a type test
+
+A runtime test cannot see a lost case in an error type: the code that raised it is gone, and a declared return type still compiles (see `skill:effect-errors`). Pin each public Effect signature in a `*.test-d.ts` file with Vitest's `expectTypeOf`:
+
+```ts
+import * as Effect from "effect/Effect"
+import { expectTypeOf } from "vitest"
+
+class NotFound { readonly _tag = "NotFound" }
+class StoreError { readonly _tag = "StoreError" }
+declare const getItem: (id: string) => Effect.Effect<{ readonly id: string }, NotFound | StoreError>
+
+expectTypeOf(getItem).returns.toEqualTypeOf<Effect.Effect<{ readonly id: string }, NotFound | StoreError>>()
+expectTypeOf<Effect.Error<ReturnType<typeof getItem>>>().toEqualTypeOf<NotFound | StoreError>()
+```
+
+- Use `toEqualTypeOf`, not `toMatchTypeOf`: only equality fails when a case is lost.
+- Run the file with the project's `tsc`, or with `vitest --typecheck`, which picks up `**/*.{test,spec}-d.?(c|m)[jt]s?(x)` by default. A plain `vitest run` does not check types.
+- Break the signature once on purpose (drop a case from the body) and see the type test fail.
+
 ## Test through the plain async edge
 
 A module adopted behind a plain async function needs no `@effect/vitest`. Test it as production calls it.
