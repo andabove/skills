@@ -2,5 +2,8 @@
   "source": "andabove/skills",
   "skillPath": "skills/effect-data/SKILL.md",
   "origin": "original",
-  "license": "MIT"
+  "license": "MIT",
+  "changes": [
+    "2026-10-02 (ENG-3173): Effect.cached and Effect.cachedWithTTL share an interrupted first load with every waiter and store it; Effect.uninterruptible(load) does not help, wrapping the getter does, with a measured table and a checked example"
+  ]
 }

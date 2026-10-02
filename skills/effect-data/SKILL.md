@@ -179,7 +179,7 @@ The operations and the `Chunk` rules are in [the collections reference](referenc
 
 - Each call to `Effect.cached` or `Cache.make` makes a new, empty cache. Build it once, in a `Layer` or at startup, and share it.
 - Failures are cached too. `Effect.cached` returns the first failure forever; `Cache` keeps a failed key for its `timeToLive`. Put `Effect.retry` inside the cached effect, or use `Cache.makeWith` with `timeToLive: (exit) => Exit.isSuccess(exit) ? "5 minutes" : Duration.zero` to keep failures out.
-- Interruption is cached by `Effect.cached`: if the first run is interrupted (a timeout, a cancelled request), every later run fails with that interruption. Run the first load where nothing cancels it, such as the layer that builds the service.
+- Interruption is cached too. `Effect.cached` and `Effect.cachedWithTTL` run the load in the fiber of the first caller. If that caller is interrupted mid-load (a timeout, a closed request), every caller that waited on the load fails with the interruption, and later runs get it for ever (`cached`) or for the whole TTL (`cachedWithTTL`). `Effect.uninterruptible(load)` inside the cache does not help: the interrupt is raised as the region ends, and the cache stores it. Make load-and-store one uninterruptible step: wrap the getter, `Effect.uninterruptible(get)`, or run the first load where nothing cancels it, such as the layer that builds the service. Example: [the caching reference](references/effect-data-caching-batching.md#a-load-that-a-close-must-not-split).
 - Concurrent `Cache.get` calls for one key run the lookup once and share the result. If every waiter is interrupted, the key is removed.
 - A full `Cache` evicts the least recently used key. Without `timeToLive`, entries never expire.
 

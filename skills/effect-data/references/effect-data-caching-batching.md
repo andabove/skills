@@ -13,11 +13,40 @@ Checked against `effect 4.0.0`. Read `node_modules/effect/src/Cache.ts`, `Scoped
 | Interrupted | Fail with the same interruption, without running `load` again |
 | Still running | Wait for it and share its outcome |
 
-The interrupted row is the trap: if the first caller times out or is cancelled, every later caller is interrupted too. Start the first run in a fiber that is not cancelled (for example in the layer that builds the service), or use `Effect.cachedInvalidateWithTTL` and call the invalidate effect on failure.
+The interrupted row is the trap: if the first caller times out or is cancelled, every later caller is interrupted too. Start the first run in a fiber that is not cancelled (for example in the layer that builds the service), use `Effect.cachedInvalidateWithTTL` and call the invalidate effect on failure, or wrap the getter in `Effect.uninterruptible` (see [below](#a-load-that-a-close-must-not-split)).
 
 - `Effect.cachedWithTTL(load, "5 minutes")` runs `load` again on the first use after the TTL.
 - `Effect.cachedInvalidateWithTTL(load, ttl)` returns `[get, invalidate]`. Run `invalidate` to force the next `get` to reload.
 - Each call creates a new cache. Create it once and keep the returned effect.
+
+### A load that a close must not split
+
+A module-level or service-level cache on a request path has a request as its first caller, and a request can close mid-load. Measured on 4.0.0, with a 100 ms load, a first caller whose signal aborts at 20 ms, a second caller that waits on the same load, and a third call after both:
+
+| Cache | First caller | Waiting caller | Later call |
+| --- | --- | --- | --- |
+| `cachedWithTTL(load, "1 minute")` | interrupted | interrupted | interrupted |
+| `cachedWithTTL(Effect.uninterruptible(load), "1 minute")` | interrupted | interrupted | interrupted |
+| `cachedWithTTL(load, (exit) => Exit.isSuccess(exit) ? "1 minute" : 0)` | interrupted | interrupted | a second load |
+| `Effect.uninterruptible(cachedWithTTL(load, "1 minute"))` | interrupted, after the load | the value | the value, one load |
+
+The waiting caller was never interrupted, yet it fails in the first three rows. In the second row the load runs to its end, but the interrupt is raised at the end of the region, inside the cache's exit handler, so the cache stores the interrupt. Wrap the getter: the cache then stores the value before the region ends, and only the closed caller ends interrupted.
+
+```ts
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+
+declare const loadTemplate: Effect.Effect<string, "LoadFailed">
+
+// Build once. A closed request waits for the load, the cache keeps the value,
+// and a failed load is tried again on the next call.
+export const makeTemplateCache = Effect.map(
+  Effect.cachedWithTTL(loadTemplate, (exit) => (Exit.isSuccess(exit) ? "1 minute" : 0)),
+  (get) => Effect.uninterruptible(get)
+)
+```
+
+The cost: a closed request, and every waiter, waits for the load. Give the load a timeout inside it when it can hang.
 
 ## Cache
 
