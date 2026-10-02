@@ -155,7 +155,7 @@ export declare function runRoute<A, R>(route: AnsweredProgram<A, R>, signal: Abo
 ```
 
 - **An answer that must survive a close runs with no signal.** A signal that fires after the program's first suspension ends the run interrupted, even after an uninterruptible write (see `skill:effect-concurrency`). Such a route runs with no interrupting signal and reads the close as a value.
-- **A route that answers with a stream.** The edge covers the program until it returns, and the stream outlives it. So the edge's signal and error mapping do not reach the work that the stream drives. Give that work a runner that carries the request's signal, so a close stops the calls the stream drives. Run the save that must survive a close with no signal. Run both through the runtime, so its `dispose()` reaches them. No edge answers a fault after the first byte, so the work logs its own faults. A Nitro example is in `skill:effect-services` (its frameworks reference).
+- **A route that answers with a stream.** The edge covers the program until it returns, and the stream outlives it. So the edge's signal and error mapping do not reach the work that the stream drives. Give that work a runner that carries the request's signal, so a close stops the calls the stream drives. Run the save that must survive a close with no signal. Run that work and the save through the runtime, so its `dispose()` reaches them. A raw SDK stream that the route returns is not a run of the runtime. Only the request's signal reaches it, and `dispose()` does not. No edge answers a fault after the first byte, so the work logs its own faults. A Nitro example is in `skill:effect-services` (its frameworks reference).
 
 ## Import from subpaths
 
@@ -189,7 +189,7 @@ export default [
 
 ## Keep programs at the edge with a lint rule
 
-When the edge exists, a lint rule refuses a call that runs a program outside the edge files, so no other module runs a program again. A rule that matches only `Effect.runPromise(...)` is easy to get around without meaning to. Make it cover each row below, and give each row a case in the rule's tests:
+When the edge exists, a lint rule refuses each static call that it covers and that runs a program outside the edge files. A key computed at run time escapes the rule (see the end of this section), so review still checks for one. A rule that matches only `Effect.runPromise(...)` is easy to get around without meaning to. Make it cover each row below, and give each row a case in the rule's tests:
 
 | Way around the rule | Example |
 |---|---|

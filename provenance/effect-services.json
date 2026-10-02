@@ -9,6 +9,7 @@
     "2026-10-02 (ENG-3173): a heavy SDK loads with a dynamic import inside the service method, guarded by a lint rule",
     "2026-10-02 (ENG-3173): a route that answers with a stream - the setup and the calls the stream drives take the request's signal, the save runs with none, with a Nitro sketch",
     "2026-10-02 (ENG-3173): a request signal ends the run interrupted even after an uninterruptible write",
-    "2026-10-02 (ENG-3173): writing pass with the technical-writing and unslop skills on the added text"
+    "2026-10-02 (ENG-3173): writing pass with the technical-writing and unslop skills on the added text",
+    "2026-10-02 (ENG-3173): review fixes - the stream sketch imports disconnectSignal, and the SDK stream is not a run of the runtime"
   ]
 }

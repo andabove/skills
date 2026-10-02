@@ -28,7 +28,7 @@ A module-level or service-level cache on a request path has a request as its fir
 | `cachedWithTTL(load, "1 minute")` | interrupted | interrupted | interrupted |
 | `cachedWithTTL(Effect.uninterruptible(load), "1 minute")` | interrupted | interrupted | interrupted |
 | `cachedWithTTL(load, (exit) => Exit.isSuccess(exit) ? "1 minute" : 0)` | interrupted | interrupted | a second load |
-| `Effect.uninterruptible(cachedWithTTL(load, "1 minute"))` | interrupted, after the load | the value | the value, one load |
+| `Effect.uninterruptible(get)`, where `get` is the getter that `cachedWithTTL(load, "1 minute")` gives | interrupted, after the load | the value | the value, one load |
 
 The waiting caller was never interrupted, yet it fails in the first three rows. In the second row, the load runs to its end. The fiber then raises the interrupt at the end of the region, inside the cache's exit handler, so the cache stores the interrupt. When you wrap the getter, the cache stores the value before the region ends, and only the closed caller ends interrupted.
 

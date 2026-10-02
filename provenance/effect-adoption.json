@@ -7,6 +7,7 @@
     "2026-10-02 (ENG-3173): run the tests committed first on the old code several times before claiming they pass",
     "2026-10-02 (ENG-3173): a shared route edge - a route's own answers travel with its program as one value, an answer that must survive a close runs with no signal, and a stream route splits its work by what a close must do",
     "2026-10-02 (ENG-3173): a run-at-edge lint rule covers re-exports, renamed imports, string-key destructuring and members, the edge's own helpers, anchored paths, narrow test globs and the less known run names; a run-time computed key is out of reach",
-    "2026-10-02 (ENG-3173): writing pass with the technical-writing and unslop skills on the added text"
+    "2026-10-02 (ENG-3173): writing pass with the technical-writing and unslop skills on the added text",
+    "2026-10-02 (ENG-3173): review fixes - the lint rule's claim is limited to the static calls it covers, and a raw SDK stream is reached only by the request's signal"
   ]
 }

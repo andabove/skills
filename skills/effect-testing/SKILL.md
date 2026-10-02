@@ -120,18 +120,17 @@ For services, layers and `Layer.provideMerge`, see `skill:effect-services`.
 
 A runtime test cannot see a lost case in an error type. The code that raised it is gone, and a declared return type still compiles (see `skill:effect-errors`). Pin each public Effect signature in a `*.test-d.ts` file with Vitest's `expectTypeOf`:
 
-```ts
+```ts nocheck
+// getItem.test-d.ts: import the function under test, never redeclare its type here.
 import * as Effect from "effect/Effect"
 import { expectTypeOf } from "vitest"
-
-class NotFound { readonly _tag = "NotFound" }
-class StoreError { readonly _tag = "StoreError" }
-declare const getItem: (id: string) => Effect.Effect<{ readonly id: string }, NotFound | StoreError>
+import { getItem, NotFound, StoreError } from "./getItem"
 
 expectTypeOf(getItem).returns.toEqualTypeOf<Effect.Effect<{ readonly id: string }, NotFound | StoreError>>()
 expectTypeOf<Effect.Error<ReturnType<typeof getItem>>>().toEqualTypeOf<NotFound | StoreError>()
 ```
 
+- Import the function under test. A `declare const` with the expected type checks that type against itself and passes whatever the real function returns.
 - Use `toEqualTypeOf`, not `toMatchTypeOf`. Only `toEqualTypeOf` fails when a case is lost.
 - Run the file with the project's `tsc`, or with `vitest --typecheck`, which picks up `**/*.{test,spec}-d.?(c|m)[jt]s?(x)` by default. A plain `vitest run` does not check types.
 - Break the signature once on purpose (drop a case from the body) and see the type test fail.

@@ -223,14 +223,15 @@ The handler's run covers the program until it returns. A route that answers with
 - The setup (read the input, start the call) is the program that the handler runs with the request's signal.
 - A call that the stream drives, such as a model call, takes the request's signal too, so a close stops it.
 - A save that must survive a close runs on the runtime with no signal. Run it through `runtime.run*`, so that `dispose()` reaches it.
+- The SDK stream itself is not a run of the runtime. Only the request's signal reaches it, and `dispose()` does not stop it.
 - No run answers a fault after the first byte. The work logs its own fault and ends the stream with an error code.
 
-The Nitro sketch below was not run, unlike the glue above. `disconnectSignal` is the helper of the Nitro route. `streamModel` stands for a streaming SDK that calls `onFinish` with the text so far when the stream ends or aborts.
+The Nitro sketch below was not run, unlike the glue above. `disconnectSignal` is the helper of the Nitro route above, moved into the shared module. `streamModel` stands for a streaming SDK that calls `onFinish` with the text so far when the stream ends or aborts.
 
 ```ts nocheck
 // server/routes/reply.post.ts
 import { defineEventHandler, readBody } from "h3"
-import { logFault, runtime, saveReply, startReply, streamModel } from "../effect"
+import { disconnectSignal, logFault, runtime, saveReply, startReply, streamModel } from "../effect"
 
 export default defineEventHandler(async (event) => {
   const signal = disconnectSignal(event.node.res)
