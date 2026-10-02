@@ -2,5 +2,12 @@
   "source": "andabove/skills",
   "skillPath": "skills/effect-services/SKILL.md",
   "origin": "original",
-  "license": "MIT"
+  "license": "MIT",
+  "changes": [
+    "2026-10-02 (ENG-3173): dispose() interrupts only the runs that the runtime made; long-lived work that must stop at shutdown runs through the runtime",
+    "2026-10-02 (ENG-3173): an uninterruptible acquire needs a deadline, and a connect that settles after it is closed",
+    "2026-10-02 (ENG-3173): a heavy SDK loads with a dynamic import inside the service method, guarded by a lint rule",
+    "2026-10-02 (ENG-3173): a route that answers with a stream - the setup and the calls the stream drives take the request's signal, the save runs with none, with a Nitro sketch",
+    "2026-10-02 (ENG-3173): a request signal ends the run interrupted even after an uninterruptible write"
+  ]
 }

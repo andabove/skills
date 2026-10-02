@@ -151,6 +151,7 @@ export const AppLayer = Layer.mergeAll(Reports.layer, Sql.layer)
 - Memoization is by object reference. A factory such as `makeSqlLayer()` called twice gives two layers and two pools. Call it once and reuse the value. Use `Layer.fresh(layer)` when you want a second instance on purpose.
 - `Effect.provide(effect, layer)` reuses a build only when an enclosing build (a `ManagedRuntime` or an outer `Effect.provide`) already made that same layer object. Otherwise it builds the layer for that run and closes it at the end: inside a request handler, a loop or a service method, one pool per call. Provide at the edge only, and use `Layer.fresh` when you want a new instance.
 - The layer's `E` becomes the program's failure. Recover with `Layer.catch` or `Layer.catchTag`, or turn it into a defect with `Layer.orDie`.
+- Load a heavy SDK at its first use, not at boot. A `ManagedRuntime` builds every layer at its first run, so a static import of the SDK, or an import in the layer's build, loads it for the first request of any kind, a health check included. Import only its types statically, run `import("the-sdk")` inside the service method, and guard the static import with a lint rule. Example: [references/effect-services-layers.md](references/effect-services-layers.md#load-a-heavy-sdk-at-first-use).
 
 More constructors, `Layer.unwrap`, `LayerMap` and naming: [references/effect-services-layers.md](references/effect-services-layers.md).
 
@@ -168,6 +169,7 @@ Traps:
 
 - A value returned out of `Effect.scoped` is already released. Do the work inside the scope, or move the resource into a layer.
 - `Effect.forkScoped` interrupts the fiber when its scope closes. A fiber interrupted before it starts runs none of its body, its own `onInterrupt` included. Register cleanup on the scope (`acquireRelease`, `Effect.addFinalizer`), not only inside the forked fiber.
+- An acquire that never settles holds its scope open for ever, and `runtime.dispose()` and a server stop wait for it. Give an acquire that calls a connect with no signal a deadline (`Effect.timeout` inside the acquire), and close a resource whose connect settles after the deadline. Example: [references/effect-services-resources.md](references/effect-services-resources.md#give-the-acquire-a-deadline).
 
 Manual scopes, rollback on failure and finalizer helpers: [references/effect-services-resources.md](references/effect-services-resources.md).
 
@@ -239,8 +241,9 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
 - `ManagedRuntime.make(layer)` builds nothing until the first run. Concurrent first runs share one build, and later runs reuse it. When the layer fails, each run rejects with the layer's error. To fail fast, await `runtime.runPromise(Effect.void)` at startup, before the server listens.
 - On a typed failure, `runtime.runPromise` rejects with the error value. Catch the handler's typed errors inside the effect and turn them into responses. The promise can still reject on interruption (an aborted request), on a layer build failure such as a `ConfigError`, and on defects.
-- Pass the request's abort signal as `{ signal }`. A client disconnect then interrupts the work and runs its finalizers.
-- Call `await runtime.dispose()` at shutdown. It interrupts fibers still running, then closes the layer scope. A run after `dispose` rejects with `ManagedRuntime disposed`.
+- Pass the request's abort signal as `{ signal }`. A client disconnect then interrupts the work and runs its finalizers. The run then ends interrupted even when an uninterruptible write finished: a handler that must answer after a close runs with no signal (see `effect-concurrency`).
+- Call `await runtime.dispose()` at shutdown. It interrupts the fibers of the runs that the runtime started (`runtime.run*`), then closes the layer scope. A run after `dispose` rejects with `ManagedRuntime disposed`.
+- `dispose()` does not reach a run that the runtime did not make, such as `Effect.runPromiseExitWith(await runtime.context())(work)`: that work runs on after a server stop, with its layers already closed. Run long-lived work that must stop at shutdown, such as a socket's session, through the runtime.
 - Make one runtime per process. A runtime per request rebuilds every layer per request, and a dev server that re-evaluates modules makes a new runtime per reload: keep it on `globalThis` in development.
 
 Hono, Express, Next.js and Nitro glue, request-scoped values and shutdown: [references/effect-services-frameworks.md](references/effect-services-frameworks.md).

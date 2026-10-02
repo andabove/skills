@@ -47,6 +47,37 @@ export const job = Effect.scoped(
 - The acquire step is uninterruptible. An interrupt during acquisition waits for it to finish, then runs the release.
 - An acquire step that fails registers no release: nothing was acquired.
 
+## Give the acquire a deadline
+
+Because the acquire is uninterruptible, a connect that never settles holds the scope for ever: a socket that closes, `runtime.dispose()` and a server stop all wait for it. Measured on 4.0.0: with a connect that never settles in a layer, `dispose()` had not returned after 500 ms.
+
+Bound the acquire with `Effect.timeout` inside it. The timeout still fires in the uninterruptible region, because the race under it forks the connect as an interruptible fiber. A connect that takes no signal runs on after the deadline, so close what it returns when it settles: no release holds it.
+
+```ts
+import * as Effect from "effect/Effect"
+
+interface Connection {
+  close(): void
+}
+// The SDK's connect takes no signal, and can wait for ever.
+declare const connect: () => Promise<Connection>
+
+const connectWithin = Effect.suspend(() => {
+  const connecting = connect()
+  return Effect.promise(() => connecting).pipe(
+    Effect.timeout("15 seconds"),
+    // The connect lost the race: close it when it settles.
+    Effect.onError(() => Effect.sync(() => void connecting.then((late) => late.close(), () => undefined)))
+  )
+})
+
+export const connection = Effect.acquireRelease(connectWithin, (open) => Effect.sync(() => open.close()))
+```
+
+Measured with a 100 ms deadline: the acquire failed with `TimeoutError` after 102 ms, a connect that settled at 300 ms was closed, and `dispose()` during a connect that never settles returned at the deadline.
+
+`Effect.acquireRelease(acquire, release, { interruptible: true })` lets an interrupt stop the acquire instead. With a connect that takes no signal, the connection then opens with no release to close it. Keep the default and the deadline.
+
 ## Roll back a sequence on failure
 
 Give each step a release that undoes it only when the scope closes with a failure. If a later step fails, the earlier steps undo in reverse order.
