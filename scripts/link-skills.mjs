@@ -1,6 +1,7 @@
-// Rebuilds .claude/skills/ as one symlink per skill, so each runtime finds
+// Rebuilds .agents/skills/ as one symlink per skill, so each runtime finds
 // every skill one level deep, also the skills inside a group folder.
-// .agents/skills and .cursor/skills point to .claude/skills.
+// .claude/skills and .cursor/skills point to .agents/skills, the folder that
+// `npx skills add` also treats as canonical.
 // Run: node scripts/link-skills.mjs
 import { existsSync } from "node:fs";
 import { mkdir, readdir, rm, symlink } from "node:fs/promises";
@@ -9,7 +10,7 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const skillsDirectory = join(root, "skills");
-const runtimeDirectory = join(root, ".claude", "skills");
+const runtimeDirectory = join(root, ".agents", "skills");
 
 const skills = [];
 for (const entry of await readdir(skillsDirectory, { withFileTypes: true })) {
@@ -29,11 +30,11 @@ await rm(runtimeDirectory, { recursive: true, force: true });
 await mkdir(runtimeDirectory, { recursive: true });
 for (const skill of skills) await symlink(relative(runtimeDirectory, skill.directory), join(runtimeDirectory, skill.name));
 
-for (const runtime of [".agents", ".cursor"]) {
+for (const runtime of [".claude", ".cursor"]) {
 	const link = join(root, runtime, "skills");
 	await rm(link, { recursive: true, force: true });
 	await mkdir(dirname(link), { recursive: true });
-	await symlink("../.claude/skills", link);
+	await symlink("../.agents/skills", link);
 }
 
-process.stdout.write(`linked ${skills.length} skills in .claude/skills\n`);
+process.stdout.write(`linked ${skills.length} skills in .agents/skills\n`);

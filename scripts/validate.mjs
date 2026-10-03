@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const skillsDirectory = join(repositoryRoot, "skills");
 const provenanceDirectory = join(repositoryRoot, "provenance");
-const runtimeSkillsDirectory = join(repositoryRoot, ".claude", "skills");
+const runtimeSkillsDirectory = join(repositoryRoot, ".agents", "skills");
 const brandedSkillNames = new Set();
 const genericSkillForbiddenMarkers = [
 	["&above brand reference", /&above|\bandabove\b/i],
@@ -59,7 +59,7 @@ function localLinks(text) {
 
 // A skill is skills/<name>/ or, inside a group folder that has no SKILL.md,
 // skills/<group>/<name>/. Installers find both; runtimes read one level, so
-// .claude/skills/ holds one symlink per skill.
+// .agents/skills/ holds one symlink per skill.
 async function discoverSkills(errors) {
 	const skills = [];
 	for (const entry of await readdir(skillsDirectory, { withFileTypes: true })) {
@@ -95,11 +95,16 @@ async function validateRuntimeLinks(skills, errors) {
 		const expected = relative(runtimeSkillsDirectory, skill.directory);
 		const info = await lstat(link).catch(() => undefined);
 		if (!info?.isSymbolicLink() || (await readlink(link)) !== expected) {
-			errors.push(`.claude/skills/${skill.name}: must be a symlink to ${expected}; ${fix}`);
+			errors.push(`.agents/skills/${skill.name}: must be a symlink to ${expected}; ${fix}`);
 		}
 	}
 	for (const name of entries) {
-		if (!skills.some((skill) => skill.name === name)) errors.push(`.claude/skills/${name}: no skill has this name; ${fix}`);
+		if (!skills.some((skill) => skill.name === name)) errors.push(`.agents/skills/${name}: no skill has this name; ${fix}`);
+	}
+	for (const runtime of [".claude", ".cursor"]) {
+		const link = join(repositoryRoot, runtime, "skills");
+		const info = await lstat(link).catch(() => undefined);
+		if (!info?.isSymbolicLink() || (await readlink(link)) !== "../.agents/skills") errors.push(`${runtime}/skills: must be a symlink to ../.agents/skills; ${fix}`);
 	}
 }
 
