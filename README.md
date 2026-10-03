@@ -18,6 +18,14 @@ npx skills add andabove/skills --skill <name> --agent claude-code codex cursor -
 
 Use `--skill '*'` to install every skill.
 
+Install a whole group, such as the eleven Effect skills in `skills/effect/`, by its folder:
+
+```sh
+npx skills add andabove/skills/skills/effect --skill '*' --agent claude-code codex cursor -y
+```
+
+The skills land side by side in `.claude/skills/`, the same as skills installed one at a time.
+
 ## Test a local source change
 
 Before you push a shared-skill change, copy it from a local checkout into a consuming repository:
@@ -35,7 +43,7 @@ With no skill names, the script copies every skill. It validates this repository
 
 `.claude/skills/` is the canonical directory; the symlinks let Cursor and generic AGENTS.md agents read the same files.
 
-In this source repository, `skills/` is canonical. `.claude/skills`, `.agents/skills`, and `.cursor/skills` point to it so each supported runtime discovers the source skills while you edit them. `CLAUDE.md` points to `AGENTS.md` so both instruction formats use the same rules.
+In this source repository, `skills/` is canonical. A skill is `skills/<name>/`, or `skills/<group>/<name>/` inside a group folder that has no `SKILL.md` of its own. Runtimes read skills one level deep, so `.claude/skills/` holds one symlink per skill, and `.agents/skills` and `.cursor/skills` point to `.claude/skills`. After you add, move or rename a skill, run `node scripts/link-skills.mjs`. `node scripts/validate.mjs` fails until the links match. `CLAUDE.md` points to `AGENTS.md` so both instruction formats use the same rules.
 
 ## Updating an adapted skill
 

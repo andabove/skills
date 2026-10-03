@@ -21,8 +21,9 @@ repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 
 node "$repo_root/scripts/validate.mjs"
 
+# .claude/skills holds one link per skill, group folders included.
 if [ "$#" -eq 0 ]; then
-	set -- $(ls "$repo_root/skills")
+	set -- $(ls "$repo_root/.claude/skills")
 fi
 
 for dir in .agents .cursor; do
@@ -38,11 +39,11 @@ done
 mkdir -p "$target/.claude/skills"
 
 for skill in "$@"; do
-	src="$repo_root/skills/$skill"
-	if [ ! -f "$src/SKILL.md" ]; then
+	if [ ! -f "$repo_root/.claude/skills/$skill/SKILL.md" ]; then
 		echo "install.sh: unknown skill: $skill" >&2
 		exit 1
 	fi
+	src=$(CDPATH= cd -P -- "$repo_root/.claude/skills/$skill" && pwd)
 	rm -rf "$target/.claude/skills/$skill"
 	cp -R "$src" "$target/.claude/skills/$skill"
 	echo "installed $skill"

@@ -1,6 +1,6 @@
 {
   "source": "andabove/skills",
-  "skillPath": "skills/effect-v3-to-v4/SKILL.md",
+  "skillPath": "skills/effect/effect-v3-to-v4/SKILL.md",
   "upstream": {
     "repo": "Effect-TS/skills",
     "path": "skills/effect-v3-to-v4/SKILL.md",

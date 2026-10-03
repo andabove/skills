@@ -3,12 +3,12 @@ name: Type check the Effect examples
 on:
   pull_request:
     paths:
-      - "skills/effect*/**"
+      - "skills/effect/**"
       - "scripts/check-effect-examples.mjs"
       - "scripts/effect-examples/**"
   push:
     paths:
-      - "skills/effect*/**"
+      - "skills/effect/**"
       - "scripts/check-effect-examples.mjs"
       - "scripts/effect-examples/**"
 

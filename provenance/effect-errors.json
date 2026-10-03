@@ -1,10 +1,11 @@
 {
   "source": "andabove/skills",
-  "skillPath": "skills/effect-errors/SKILL.md",
+  "skillPath": "skills/effect/effect-errors/SKILL.md",
   "origin": "original",
   "license": "MIT",
   "changes": [
     "2026-10-02 (ENG-3173): a declared error type can hide a missing case; let Effect.fn infer it and pin it with a type test",
-    "2026-10-02 (ENG-3173): writing pass with the technical-writing and unslop skills on the added text"
+    "2026-10-02 (ENG-3173): writing pass with the technical-writing and unslop skills on the added text",
+    "2026-10-03: moved into the skills/effect/ group folder, so one install command adds the whole Effect set"
   ]
 }
