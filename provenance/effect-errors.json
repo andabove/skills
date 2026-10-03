@@ -2,5 +2,9 @@
   "source": "andabove/skills",
   "skillPath": "skills/effect-errors/SKILL.md",
   "origin": "original",
-  "license": "MIT"
+  "license": "MIT",
+  "changes": [
+    "2026-10-02 (ENG-3173): a declared error type can hide a missing case; let Effect.fn infer it and pin it with a type test",
+    "2026-10-02 (ENG-3173): writing pass with the technical-writing and unslop skills on the added text"
+  ]
 }

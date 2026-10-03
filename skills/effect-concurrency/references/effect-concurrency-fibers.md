@@ -57,9 +57,36 @@ Fibers do not combine directly. Join each one and combine the effects, for examp
 - A fiber is interrupted from outside. It stops at the next interruptible point, then runs its finalizers in reverse order of registration.
 - The effect that requested the interruption (`Fiber.interrupt`, `Effect.timeout`, a race, `Effect.all` after a failure, a closing scope) resumes only after those finalizers finish.
 - `Effect.onInterrupt(cleanup)` runs only on interruption. `Effect.ensuring(finalizer)` runs on every exit. `Effect.onExit(f)` sees the `Exit`.
-- `Effect.uninterruptible(effect)` defers interruption until `effect` ends. `Effect.uninterruptibleMask((restore) => ...)` defers it except inside `restore(...)`. `Effect.interruptible` reopens a region.
+- `Effect.uninterruptible(effect)` defers interruption until `effect` ends. Then the fiber ends interrupted, and the value of `effect` is dropped. `Effect.uninterruptibleMask((restore) => ...)` defers it except inside `restore(...)`. `Effect.interruptible` reopens a region.
 - `Effect.timeout` on an uninterruptible effect returns only when the effect ends, and still fails with `TimeoutError`. Measured: a 300 ms uninterruptible task under a 100 ms timeout returned after 300 ms with `TimeoutError`.
 - A program run with `Effect.runPromise(effect, { signal })` or `Effect.runPromiseExit(effect, { signal })` is interrupted when the signal aborts. The returned Promise settles when the fiber's finalizers finish.
+
+### An uninterruptible region does not keep the answer
+
+When an interrupt arrives during an uninterruptible region, the fiber records it. At the end of the region, the step that makes the fiber interruptible again raises it (`setInterruptible` in `internal/effect.ts`), so the value of the region is lost. Measured on 4.0.0, with a signal that aborts 30 ms into a 60 ms program whose last 50 ms are uninterruptible:
+
+| The run | Exit | The region |
+| --- | --- | --- |
+| `runPromiseExit(program, { signal })` | interrupt | ran to its end |
+| `runPromiseExit(Effect.uninterruptible(program), { signal })` | interrupt | ran to its end |
+| `runPromiseExit(Effect.exit(program), { signal })` | interrupt | ran to its end |
+| `runPromiseExit(program)`, the close read as a value | success | ran to its end |
+
+The run option `{ signal, uninterruptible: true }` also gives the value, because the fiber never becomes interruptible, but then the signal does nothing.
+
+So `Effect.uninterruptible` keeps a write whole, but a route that must answer after the write cannot rely on it. Run that program with no interrupting signal, and read the close where the program decides its answer:
+
+```ts
+import * as Effect from "effect/Effect"
+
+declare const save: (order: string) => Effect.Effect<string>
+
+// Run with Effect.runPromise(answerSave(order, request.signal)): no { signal } option.
+export const answerSave = (order: string, closed: AbortSignal) =>
+  Effect.map(save(order), (id) => (closed.aborted ? { status: 499, id } : { status: 201, id }))
+```
+
+With no signal, nothing interrupts the program. A step before the save that must stop on a close has to race the close itself.
 
 ## Cancellation of foreign calls
 

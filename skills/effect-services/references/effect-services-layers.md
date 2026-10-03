@@ -153,6 +153,55 @@ export const Heartbeat = Layer.effectDiscard(
 )
 ```
 
+## Load a heavy SDK at first use
+
+A `ManagedRuntime` builds every layer at its first run. A layer module that imports a large SDK statically, or that imports it in its build, makes the first request of any kind pay for that import, a health check included. In one Node server, three model SDKs took 157 ms to import cold. After the move to first use, the first health check took 607 ms against 678 ms (medians of 20 fresh servers).
+
+Import only the SDK's types at the top, and run the dynamic import inside the service method. Node caches the module, so the import runs once, and concurrent first calls share it. An interrupted caller does not cancel the import.
+
+```ts
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
+
+// The SDK's shape. In a project: `import type * as PdfSdk from "pdf-sdk"`, which loads nothing.
+interface PdfSdk {
+  render(html: string): Promise<Uint8Array>
+}
+// Stands in for `() => import("pdf-sdk")`.
+declare const importPdfSdk: () => Promise<PdfSdk>
+
+class RenderError extends Schema.TaggedError<RenderError>()("RenderError", { cause: Schema.Defect() }) {}
+
+export class Pdf extends Context.Service<Pdf, {
+  render(html: string): Effect.Effect<Uint8Array, RenderError>
+}>()("myapp/pdf/Pdf") {
+  static readonly layer = Layer.succeed(Pdf, Pdf.of({
+    render: Effect.fn("Pdf.render")(function* (html: string) {
+      // A module that fails to load is a defect of the build, not a RenderError.
+      const sdk = yield* Effect.promise(() => importPdfSdk())
+      return yield* Effect.tryPromise({ try: () => sdk.render(html), catch: (cause) => new RenderError({ cause }) })
+    })
+  }))
+}
+```
+
+Guard it, or the next static import brings the cost back. typescript-eslint's `no-restricted-imports` with `allowTypeImports: true` refuses a static value import and an `export *` of the SDK, and passes `import type` and `import()` (checked with ESLint 9.39 and typescript-eslint 8.71). When a local module wraps the SDK, restrict that module the same way.
+
+```js
+// eslint.config.js, with typescript-eslint
+export default [
+  {
+    rules: {
+      "@typescript-eslint/no-restricted-imports": ["error", {
+        paths: [{ name: "pdf-sdk", allowTypeImports: true, message: "Import pdf-sdk with import() inside its service method." }]
+      }]
+    }
+  }
+]
+```
+
 ## Errors during construction
 
 - The layer's `E` joins the error channel of the effect it is provided to. With `ManagedRuntime`, each run rejects with it.

@@ -55,6 +55,37 @@ export const findUser = Effect.fn("findUser")(function*(userId: string) {
 - Raise with `return yield* new UserNotFound({ ... })` in a generator, or `Effect.fail(new UserNotFound({ ... }))` in a pipeline. A tagged error instance is itself yieldable.
 - Do not use strings or plain `Error` as `E`: callers cannot tell them apart with `catchTag`.
 
+## Keep the error type honest
+
+A declared error type can hide a missing case. A narrower error type fits a wider declared one, so when a change drops a case (a `NotFound` becomes a generic `StoreError`, and a 404 becomes a 500), a function declared with `Effect.fn.Return<A, NotFound | StoreError>` still compiles, and so does every caller.
+
+- Let `Effect.fn` infer the error type from the body.
+- Pin each public signature with a type test, `expectTypeOf` in a `*.test-d.ts` file. `toEqualTypeOf` fails when the inferred union loses a case or gains one.
+
+```ts
+import * as Data from "effect/Data"
+import * as Effect from "effect/Effect"
+import { expectTypeOf } from "vitest"
+
+class NotFound extends Data.TaggedError("NotFound")<{ readonly id: string }> {}
+class StoreError extends Data.TaggedError("StoreError")<{ readonly cause: unknown }> {}
+
+interface Item { readonly id: string }
+declare const query: (id: string) => Effect.Effect<Item | undefined, StoreError>
+
+// No declared return type: the error type comes from the body.
+export const getItem = Effect.fn("getItem")(function*(id: string) {
+  const row = yield* query(id)
+  if (row === undefined) return yield* new NotFound({ id })
+  return row
+})
+
+// getItem.test-d.ts: fails to compile when the body stops raising NotFound.
+expectTypeOf(getItem).returns.toEqualTypeOf<Effect.Effect<Item, NotFound | StoreError>>()
+```
+
+Checked with `tsc` on 4.0.0. With `NotFound` replaced by `StoreError` in the body, the declared form compiles, and the type test fails with `TS2344`. See `effect-testing` for running type tests.
+
 ## Recover
 
 Pick the narrowest operator. Each one removes what it handles from `E`.

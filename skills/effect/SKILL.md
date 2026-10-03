@@ -114,7 +114,7 @@ export const priceOf = Effect.fn("priceOf")(
 ```
 
 - Put extra behaviour (`Effect.catchTag`, `Effect.retry`, `Effect.annotateLogs`) in the arguments after the body. Each one receives the effect and the call's arguments, and runs inside the span. A `.pipe` on the call result runs outside the span.
-- `Effect.fn.Return<A, E, R>` annotates the generator's return type. Use it to fix the public type of the function, so that a change in the body cannot widen it.
+- `Effect.fn.Return<A, E, R>` annotates the generator's return type. Use it to fix the public type of the function, so that a change in the body cannot widen it. It does not catch a narrower type: a body that stops raising a declared error still compiles. For a public error type, let `Effect.fn` infer it and pin it with a type test (see `effect-errors`).
 - `Effect.fn` also accepts a body that returns an effect directly: `Effect.fn("parse")((input: string) => Effect.try(...))`. `Effect.fnUntraced` accepts only a generator.
 - Calling the function runs nothing. Each run of the returned effect runs the body.
 

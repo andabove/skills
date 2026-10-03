@@ -13,7 +13,7 @@ Authoring and adaptation rules for this repo. The authoring standard is the `wri
 ## Adapted skills
 
 - Keep the upstream skill name, except stripping list prefixes like `principle-`.
-- Give every skill a `provenance/<name>.json` file. For an original skill, record `source`, `skillPath`, `origin`, and `license`. For an adapted skill, use:
+- Give every skill a `provenance/<name>.json` file. For an original skill, record `source`, `skillPath`, `origin`, and `license`, and add one line to `changes` for each later change, with its date and ticket. For an adapted skill, use:
 
 ```json
 {

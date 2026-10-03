@@ -2,5 +2,10 @@
   "source": "andabove/skills",
   "skillPath": "skills/effect-data/SKILL.md",
   "origin": "original",
-  "license": "MIT"
+  "license": "MIT",
+  "changes": [
+    "2026-10-02 (ENG-3173): Effect.cached and Effect.cachedWithTTL share an interrupted first load with every waiter and store it; Effect.uninterruptible(load) does not help, wrapping the getter does, with a measured table and a checked example",
+    "2026-10-02 (ENG-3173): writing pass with the technical-writing and unslop skills on the added text",
+    "2026-10-02 (ENG-3173): review fix - the table row wraps the getter, not the cache creation"
+  ]
 }
