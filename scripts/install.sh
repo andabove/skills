@@ -28,6 +28,12 @@ if [ "$#" -eq 0 ]; then
 fi
 
 for skill in "$@"; do
+	case "$skill" in
+	"" | . | .. | */*)
+		echo "install.sh: not a skill name: $skill" >&2
+		exit 1
+		;;
+	esac
 	if [ ! -f "$repo_root/.agents/skills/$skill/SKILL.md" ]; then
 		echo "install.sh: unknown skill: $skill" >&2
 		exit 1

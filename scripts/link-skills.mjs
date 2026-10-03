@@ -26,6 +26,13 @@ for (const entry of await readdir(skillsDirectory, { withFileTypes: true })) {
 	}
 }
 
+// Check before the old links go, so a failed run leaves them in place.
+const names = new Set();
+for (const skill of skills) {
+	if (names.has(skill.name)) throw new Error(`skill name used twice: ${skill.name}; rename one, then run this again`);
+	names.add(skill.name);
+}
+
 await rm(runtimeDirectory, { recursive: true, force: true });
 await mkdir(runtimeDirectory, { recursive: true });
 for (const skill of skills) await symlink(relative(runtimeDirectory, skill.directory), join(runtimeDirectory, skill.name));
