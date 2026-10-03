@@ -1,6 +1,6 @@
 {
   "source": "andabove/skills",
-  "skillPath": "skills/effect-schema/SKILL.md",
+  "skillPath": "skills/effect/effect-schema/SKILL.md",
   "origin": "original",
   "license": "MIT"
 }

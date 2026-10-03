@@ -1,10 +1,11 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { lstat, readdir, readFile, readlink, stat } from "node:fs/promises";
 import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const skillsDirectory = join(repositoryRoot, "skills");
 const provenanceDirectory = join(repositoryRoot, "provenance");
+const runtimeSkillsDirectory = join(repositoryRoot, ".agents", "skills");
 const brandedSkillNames = new Set();
 const genericSkillForbiddenMarkers = [
 	["&above brand reference", /&above|\bandabove\b/i],
@@ -56,8 +57,58 @@ function localLinks(text) {
 		.filter((target) => target.startsWith(".") || target.includes("/") || extname(target));
 }
 
-async function validateSkill(name, errors) {
-	const skillDirectory = join(skillsDirectory, name);
+// A skill is skills/<name>/ or, inside a group folder that has no SKILL.md,
+// skills/<group>/<name>/. Installers find both; runtimes read one level, so
+// .agents/skills/ holds one symlink per skill.
+async function discoverSkills(errors) {
+	const skills = [];
+	for (const entry of await readdir(skillsDirectory, { withFileTypes: true })) {
+		if (!entry.isDirectory()) continue;
+		const directory = join(skillsDirectory, entry.name);
+		if (await pathExists(join(directory, "SKILL.md"))) {
+			skills.push({ name: entry.name, directory });
+			continue;
+		}
+		for (const child of await readdir(directory, { withFileTypes: true })) {
+			const childDirectory = join(directory, child.name);
+			if (child.isDirectory() && (await pathExists(join(childDirectory, "SKILL.md")))) {
+				skills.push({ name: child.name, directory: childDirectory });
+			} else {
+				errors.push(`${relative(repositoryRoot, childDirectory)}: a group folder holds only skill folders`);
+			}
+		}
+	}
+	const seen = new Map();
+	for (const skill of skills) {
+		const first = seen.get(skill.name);
+		if (first) errors.push(`${skill.name}: skill name used twice, in ${relative(repositoryRoot, first)} and ${relative(repositoryRoot, skill.directory)}`);
+		else seen.set(skill.name, skill.directory);
+	}
+	return skills.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function validateRuntimeLinks(skills, errors) {
+	const fix = "run node scripts/link-skills.mjs";
+	const entries = await readdir(runtimeSkillsDirectory).catch(() => []);
+	for (const skill of skills) {
+		const link = join(runtimeSkillsDirectory, skill.name);
+		const expected = relative(runtimeSkillsDirectory, skill.directory);
+		const info = await lstat(link).catch(() => undefined);
+		if (!info?.isSymbolicLink() || (await readlink(link)) !== expected) {
+			errors.push(`.agents/skills/${skill.name}: must be a symlink to ${expected}; ${fix}`);
+		}
+	}
+	for (const name of entries) {
+		if (!skills.some((skill) => skill.name === name)) errors.push(`.agents/skills/${name}: no skill has this name; ${fix}`);
+	}
+	for (const runtime of [".claude", ".cursor"]) {
+		const link = join(repositoryRoot, runtime, "skills");
+		const info = await lstat(link).catch(() => undefined);
+		if (!info?.isSymbolicLink() || (await readlink(link)) !== "../.agents/skills") errors.push(`${runtime}/skills: must be a symlink to ../.agents/skills; ${fix}`);
+	}
+}
+
+async function validateSkill({ name, directory: skillDirectory }, errors) {
 	const skillPath = join(skillDirectory, "SKILL.md");
 	const provenancePath = join(provenanceDirectory, `${name}.json`);
 
@@ -81,7 +132,7 @@ async function validateSkill(name, errors) {
 	if (!field(metadata, "description")) errors.push(`${name}: missing frontmatter description`);
 	if (/^disable-model-invocation:/m.test(metadata)) errors.push(`${name}: skills must stay model-invoked; remove disable-model-invocation`);
 	if (provenance.source !== "andabove/skills") errors.push(`${name}: provenance source must be andabove/skills`);
-	if (provenance.skillPath !== `skills/${name}/SKILL.md`) errors.push(`${name}: provenance skillPath does not match directory`);
+	if (provenance.skillPath !== relative(repositoryRoot, skillPath)) errors.push(`${name}: provenance skillPath does not match directory`);
 
 	const agentManifest = join(skillDirectory, "agents", "openai.yaml");
 	if (await pathExists(agentManifest)) {
@@ -109,22 +160,23 @@ async function validateSkill(name, errors) {
 }
 
 async function main() {
-	const skillEntries = await readdir(skillsDirectory, { withFileTypes: true });
-	const skillNames = skillEntries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+	const errors = [];
+	const skills = await discoverSkills(errors);
+	const skillNames = skills.map((skill) => skill.name);
 	const provenanceNames = (await readdir(provenanceDirectory))
 		.filter((name) => name.endsWith(".json"))
 		.map((name) => name.slice(0, -5))
 		.sort();
-	const errors = [];
 
-	for (const name of skillNames) await validateSkill(name, errors);
+	for (const skill of skills) await validateSkill(skill, errors);
+	await validateRuntimeLinks(skills, errors);
 	for (const name of provenanceNames) {
 		if (!skillNames.includes(name)) errors.push(`${name}: provenance has no matching skill directory`);
 	}
 
 	const referenceCopies = new Map();
-	for (const name of skillNames) {
-		const referencesDirectory = join(skillsDirectory, name, "references");
+	for (const { name, directory } of skills) {
+		const referencesDirectory = join(directory, "references");
 		if (!(await pathExists(referencesDirectory))) continue;
 		for (const file of await readdir(referencesDirectory)) {
 			const text = await readFile(join(referencesDirectory, file), "utf8");

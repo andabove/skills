@@ -1,7 +1,7 @@
 // Type checks every TypeScript example in the Effect skills against the
 // versions pinned in scripts/effect-examples/package.json.
 //
-// Each ```ts or ```typescript block in skills/effect*/**/*.md becomes one
+// Each ```ts or ```typescript block in skills/effect/**/*.md becomes one
 // module. A block whose info string holds `nocheck` is skipped: use it only
 // for a fragment that cannot compile alone, such as a diff or a signature.
 // Run: node scripts/check-effect-examples.mjs
