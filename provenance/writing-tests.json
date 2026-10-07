@@ -2,5 +2,9 @@
   "source": "andabove/skills",
   "skillPath": "skills/writing-tests/SKILL.md",
   "origin": "original",
-  "license": "MIT"
+  "license": "MIT",
+  "changes": [
+    "2026-10-07 (ABO-713): the testing doc names the test runner, and the module-mock and fake-timer examples cover Vitest and node:test instead of Vitest alone; the rules are unchanged",
+    "2026-10-07 (ABO-713): review fix - the node:test examples name the module-mock flag and the timers.enable call that setTime needs"
+  ]
 }

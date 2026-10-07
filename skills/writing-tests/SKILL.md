@@ -13,6 +13,7 @@ Put most tests on the pure logic that holds the product's rules. Test a UI compo
 
 The repository's testing doc supplies what this skill leaves open. Find it from `AGENTS.md` or `CLAUDE.md`. Read it before step 1. It names:
 
+- the test runner, which supplies the module mocks and the fake timers,
 - the owning boundaries: the layer where each kind of contract is tested at its strongest,
 - the test projects and the file name that selects each one,
 - the fakes for slow, paid or random dependencies, such as a model or a payment API,
@@ -38,12 +39,12 @@ To review or prune existing tests, apply the review list to each test, and delet
 
 ## Rules
 
-- **Pass fakes for slow, paid or random services.** No test calls a live model or a paid API: a live call is slow, costs money, gives a different answer each run and fails offline. Pass the fake in through the code's own parameter. A module mock (`vi.mock`, `jest.mock`) replaces the import for every caller and hides the dependency from the reader.
+- **Pass fakes for slow, paid or random services.** No test calls a live model or a paid API: a live call is slow, costs money, gives a different answer each run and fails offline. Pass the fake in through the code's own parameter. A module mock (`vi.mock` in Vitest, `jest.mock` in Jest, `mock.module` in `node:test` with `--experimental-test-module-mocks`) replaces the import for every caller and hides the dependency from the reader.
 - **Use a real or emulated database.** A database mock tests the mock.
 - **One behaviour for each test**, named in plain words.
 - **Write explicit assertions.** Use a snapshot only for the content that the testing doc freezes: words or numbers that change what the product does. When a frozen snapshot changes on purpose, update it, review the diff, and commit it with the change.
 - **Use captured output from the real service** where a test needs a realistic answer. Store the fixture next to the test.
-- **Control the clock with the test framework's fake timers** (`vi.setSystemTime` in Vitest), not a `now` parameter.
+- **Control the clock with the runner's fake timers** (`vi.setSystemTime` in Vitest, or `mock.timers.setTime` in `node:test` after `mock.timers.enable({ apis: ['Date'] })`), not a `now` parameter.
 
 ## Seams we allow
 

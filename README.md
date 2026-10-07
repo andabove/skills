@@ -43,7 +43,23 @@ Before you push a shared-skill change, copy it from a local checkout into a cons
 scripts/install.sh <target-repo-root> [skill...]
 ```
 
-With no skill names, the script copies every skill. It validates this repository, copies each skill to `.agents/skills/<name>`, and links it in `.claude/skills/`. A repository that an earlier version of the script set up, with the real folders in `.claude/skills/`, has its folders moved to `.agents/skills/` first. The script does not change the consuming repository's `skills-lock.json`. Use the GitHub install command after you push the source change.
+With no skill names, the script copies every skill. It validates this repository, copies each named skill to `.agents/skills/<name>`, and links it in `.claude/skills/`. It changes no other folder, so the consuming repository's own skills stay where they are.
+
+A named skill replaces only a link, a copy that the script made, or a copy that the consuming repository's `skills-lock.json` lists from `andabove/skills`. The script marks each copy it makes with a `.andabove-install` file. If `.agents/skills/<name>` or `.claude/skills/<name>` holds any other folder, the script lists each such path and installs nothing. To replace those folders, run the script again with `--force`:
+
+```sh
+scripts/install.sh --force <target-repo-root> [skill...]
+```
+
+The script does not change the consuming repository's `skills-lock.json`. Use the GitHub install command after you push the source change.
+
+An earlier version of the script kept the real folders in `.claude/skills/` and made `.agents/skills` a link to that folder. On that layout, `install.sh` installs nothing and prints a one-time migration command:
+
+```sh
+scripts/migrate-layout.sh <target-repo-root>
+```
+
+The migration moves no folder. It makes `.agents/skills/` a real folder and links each entry of `.claude/skills/` into it, so each runtime sees the same skills as before. If the migration fails part way, it puts the target back as it was. Then run `install.sh` again. It replaces the links of the skills it installs with copies. A copy that the earlier script made carries no mark, so if `skills-lock.json` does not list it, pass `--force` to replace it.
 
 ## Layout of this repository
 
