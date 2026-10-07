@@ -3,11 +3,25 @@
 # that `npx skills add` treats as canonical, and link each one for Claude
 # Code in .claude/skills/, without changing the target's lock file. Only the
 # named skills change. Every other folder stays as it is.
-# Usage: install.sh <target-repo-root> [skill...]   (default: all skills)
+# A named skill replaces only a link, a copy that this script marked, or a
+# copy that the target's skills-lock.json lists from andabove/skills. Any
+# other folder at its path stops the install, unless --force is passed.
+# Usage: install.sh [--force] <target-repo-root> [skill...]   (default: all skills)
 set -eu
 
+usage="usage: install.sh [--force] <target-repo-root> [skill...]"
+force=0
+for arg do
+	shift
+	if [ "$arg" = --force ]; then
+		force=1
+	else
+		set -- "$@" "$arg"
+	fi
+done
+
 if [ "$#" -lt 1 ]; then
-	echo "usage: install.sh <target-repo-root> [skill...]" >&2
+	echo "$usage" >&2
 	exit 1
 fi
 
@@ -64,17 +78,66 @@ if [ -L "$agents" ]; then
 	exit 1
 fi
 
-mkdir -p "$agents"
-
 if [ -L "$claude" ] && [ "$(readlink "$claude")" != "../.agents/skills" ]; then
 	echo "install.sh: $claude is a symlink that does not point to ../.agents/skills" >&2
 	exit 1
 fi
 
+# install.sh marks each copy it makes, so a later run can replace it.
+marker=.andabove-install
+
+# Skills that the target's lock file lists from this repository, one a line.
+lock="$target/skills-lock.json"
+locked=""
+if [ -f "$lock" ]; then
+	locked=$(node -e '
+		let lock;
+		try {
+			lock = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+		} catch (error) {
+			console.error(`install.sh: cannot read ${process.argv[1]}: ${error.message}`);
+			process.exit(1);
+		}
+		for (const [name, entry] of Object.entries(lock.skills ?? {})) {
+			if (entry?.source === "andabove/skills") console.log(name);
+		}
+	' "$lock")
+fi
+
+# Find every path that a named skill would replace and that holds a file
+# or a real folder this script or the lock file does not account for.
+blocked=""
+for skill in "$@"; do
+	if printf '%s\n' "$locked" | grep -Fqx -- "$skill"; then
+		continue
+	fi
+	for path in "$agents/$skill" "$claude/$skill"; do
+		if [ "$path" = "$claude/$skill" ] && [ -L "$claude" ]; then
+			continue
+		fi
+		if [ -L "$path" ] || [ ! -e "$path" ] || [ -f "$path/$marker" ]; then
+			continue
+		fi
+		blocked="$blocked  ${path#"$target"/}
+"
+	done
+done
+
+if [ -n "$blocked" ] && [ "$force" -eq 0 ]; then
+	printf '%s\n%s%s\n' \
+		"install.sh: install.sh did not install these folders, and skills-lock.json does not list them from andabove/skills. Nothing was installed." \
+		"$blocked" \
+		"Move them aside, or run again with --force to replace them." >&2
+	exit 1
+fi
+
+mkdir -p "$agents"
+
 for skill in "$@"; do
 	src=$(CDPATH= cd -P -- "$repo_root/.agents/skills/$skill" && pwd)
 	rm -rf "$agents/$skill"
 	cp -R "$src" "$agents/$skill"
+	echo "Installed by andabove/skills scripts/install.sh, which replaces this folder on its next run." >"$agents/$skill/$marker"
 	# Claude Code reads only .claude/skills. Link the skill there, unless
 	# .claude/skills is itself a link to .agents/skills.
 	if [ ! -L "$claude" ]; then
