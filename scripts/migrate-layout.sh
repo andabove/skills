@@ -21,11 +21,30 @@ if [ ! -L "$agents" ] || [ "$(readlink "$agents")" != "../.claude/skills" ] || [
 	exit 1
 fi
 
-rm "$agents"
-mkdir "$agents"
+new="$agents.new"
+if [ -e "$new" ] || [ -L "$new" ]; then
+	echo "migrate-layout.sh: $new exists from a run that stopped part way; remove it and run again" >&2
+	exit 1
+fi
+
+# Build the links in a sibling folder and swap it in as the last step. On
+# any failure, delete that folder and put the old link back if it is gone,
+# so the target is as it was and a second run can start again.
+trap 'rm -rf "$new"; [ -e "$agents" ] || [ -L "$agents" ] || ln -s ../.claude/skills "$agents"' EXIT
+trap 'exit 1' HUP INT TERM
+
+mkdir "$new"
 for path in "$claude"/*; do
 	[ -e "$path" ] || [ -L "$path" ] || continue
 	name=$(basename "$path")
-	ln -s "../../.claude/skills/$name" "$agents/$name"
+	ln -s "../../.claude/skills/$name" "$new/$name"
+done
+rm "$agents"
+mv "$new" "$agents"
+trap - EXIT HUP INT TERM
+
+for path in "$agents"/*; do
+	[ -L "$path" ] || continue
+	name=$(basename "$path")
 	echo "linked .agents/skills/$name to .claude/skills/$name"
 done

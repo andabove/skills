@@ -51,7 +51,7 @@ An earlier version of the script kept the real folders in `.claude/skills/` and 
 scripts/migrate-layout.sh <target-repo-root>
 ```
 
-The migration moves no folder. It makes `.agents/skills/` a real folder and links each entry of `.claude/skills/` into it, so each runtime sees the same skills as before. Then run `install.sh` again. It replaces the links of the skills it installs with copies.
+The migration moves no folder. It makes `.agents/skills/` a real folder and links each entry of `.claude/skills/` into it, so each runtime sees the same skills as before. If the migration fails part way, it puts the target back as it was. Then run `install.sh` again. It replaces the links of the skills it installs with copies.
 
 ## Layout of this repository
 
