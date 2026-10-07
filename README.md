@@ -43,7 +43,15 @@ Before you push a shared-skill change, copy it from a local checkout into a cons
 scripts/install.sh <target-repo-root> [skill...]
 ```
 
-With no skill names, the script copies every skill. It validates this repository, copies each skill to `.agents/skills/<name>`, and links it in `.claude/skills/`. A repository that an earlier version of the script set up, with the real folders in `.claude/skills/`, has its folders moved to `.agents/skills/` first. The script does not change the consuming repository's `skills-lock.json`. Use the GitHub install command after you push the source change.
+With no skill names, the script copies every skill. It validates this repository, copies each named skill to `.agents/skills/<name>`, and links it in `.claude/skills/`. It changes no other folder, so the consuming repository's own skills stay where they are. The script does not change the consuming repository's `skills-lock.json`. Use the GitHub install command after you push the source change.
+
+An earlier version of the script kept the real folders in `.claude/skills/` and made `.agents/skills` a link to that folder. On that layout, `install.sh` installs nothing and prints a one-time migration command:
+
+```sh
+scripts/migrate-layout.sh <target-repo-root>
+```
+
+The migration moves no folder. It makes `.agents/skills/` a real folder and links each entry of `.claude/skills/` into it, so each runtime sees the same skills as before. Then run `install.sh` again. It replaces the links of the skills it installs with copies.
 
 ## Layout of this repository
 
