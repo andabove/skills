@@ -28,9 +28,9 @@ Mark each rule pass or fail for the diff, with the `file:line` of each failure. 
 
 ## Rules
 
-1. **Give each module one job.** Keep a file below about 250 lines. Keep framework entry files (routes, plugins, config files) declarative, and move their logic into a named module.
+1. **Give each module one job.** Keep a file to at most 250 code lines. Keep framework entry files (routes, plugins, config files) declarative, and move their logic into a named module.
 2. **Move a helper to a shared module when a second caller needs it.** Do not copy it.
-3. **Keep functions below about 30 lines.** Name actions with a verb and values with a noun. Add `OrThrow` to the name of a function that throws where a reader expects a return value.
+3. **Keep functions to at most 30 code lines.** Name actions with a verb and values with a noun. Add `OrThrow` to the name of a function that throws where a reader expects a return value.
 4. **Put a `/** */` doc comment on every exported symbol.** Line one says what it is. `@remarks` says why it exists, the hazard it prevents, and what fails without it. Point to a related module that handles the same hazard.
 5. **Write comments that give a reason, not a narration, a history or a provenance.** A `//` comment inside a function is only for a value or an order that is not obvious. Ticket IDs, incident stories and design references go in the commit message, the pull request or the decision log.
 6. **Declare the parameter and return types of every exported function**, `Promise<…>` included. Use `import type` for imports that are only types.

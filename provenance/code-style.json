@@ -2,5 +2,8 @@
   "source": "andabove/skills",
   "skillPath": "skills/code-style/SKILL.md",
   "origin": "original",
-  "license": "MIT"
+  "license": "MIT",
+  "changes": [
+    "2026-10-05 (ported from andabove/gtm-agent): rules 1 and 3 count code lines, not lines, with a hard limit of 250 per file and 30 per function, so a linter's max-lines and max-lines-per-function rules can enforce them"
+  ]
 }
