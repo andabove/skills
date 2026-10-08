@@ -13,7 +13,7 @@
     "dropped the upstream metadata.credits block and CREDITS.md; the show-me credit (Dex Horthy, humanlayer/skills, MIT) is recorded here and in THIRD_PARTY_NOTICES.md",
     "added a local-rules section: read the repository's pull request rules (base branch, expected proof, checks, one-way doors, wide areas, ticket links) from AGENTS.md or CLAUDE.md, and let them win",
     "added numbered steps with done lines: find the base, read the whole change, write the title with commit-messages, gather evidence on HEAD, run blast-radius, write the body to a file, open it with gh pr create --body-file",
-    "defers prose to the technical-writing and unslop skills and domain words to the repository glossary (often CONTEXT.md)",
+    "defers prose to the technical-writing and unslop skills and domain words to the repository glossary (often GLOSSARY.md)",
     "the template adds a one-to-three sentence Summary lead and an optional ticket link, and renames Merge Danger and Blast Radius to sentence case",
     "moved the Summary visual forms (upstream's show-me examples) to VISUALS.md, one heading per form, and put the component tree in a text fence because a formatter rewrote the tsx fence as code",
     "ranked evidence as screenshots, then a test that fails before and passes after, then command output, with rules for changes that have no before and for reporting checks that passed, were skipped or failed",

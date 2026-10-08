@@ -9,6 +9,6 @@
   },
   "adapted": [
     "made the ADR location optional/generic in SKILL.md and ADR-FORMAT.md: docs/adr/ is the default, but repos that record decisions elsewhere (e.g. plan docs in docs/plans/) use their own convention",
-    "kept the CONTEXT.md glossary format unchanged; it matches the consuming repos' existing convention"
+    "renamed the glossary from CONTEXT.md to GLOSSARY.md, CONTEXT-MAP.md to GLOSSARY-MAP.md and CONTEXT-FORMAT.md to GLOSSARY-FORMAT.md, to match the consuming repositories' convention"
   ]
 }

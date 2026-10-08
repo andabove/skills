@@ -5,7 +5,7 @@ description: Open a pull request and write its title and body. Use when you open
 
 # Pull requests
 
-A pull request body lets a reviewer judge a change before reading the diff: what changes and why, the proof that it works, and what a merge can break. Write it with the `technical-writing` and `unslop` skills. Use the domain words from the repository glossary (often `CONTEXT.md`) if one exists.
+A pull request body lets a reviewer judge a change before reading the diff: what changes and why, the proof that it works, and what a merge can break. Write it with the `technical-writing` and `unslop` skills. Use the domain words from the repository glossary (often `GLOSSARY.md`) if one exists.
 
 ## Read the local rules first
 
