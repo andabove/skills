@@ -7,7 +7,7 @@ description: Diagnosis loop for hard bugs and performance regressions. Use when 
 
 A discipline for hard bugs. Skip phases only when explicitly justified.
 
-When exploring the codebase, read `GLOSSARY.md` (if it exists) to get a clear mental model of the relevant modules, and check the repo's recorded decisions in the area you're touching (its plan docs, e.g. `docs/plans/`, or ADRs where it keeps them).
+When exploring the codebase, read `GLOSSARY.md` (if it exists; in a repo with a root `GLOSSARY-MAP.md`, read the map first, then the `GLOSSARY.md` of the relevant context) to get a clear mental model of the relevant modules, and check the repo's recorded decisions in the area you're touching (its plan docs, e.g. `docs/plans/`, or ADRs where it keeps them).
 
 ## Redact
 
