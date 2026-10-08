@@ -1,0 +1,14 @@
+{
+	"source": "andabove/skills",
+	"skillPath": "skills/retro/SKILL.md",
+	"upstream": {
+		"repo": "mattpocock/skills",
+		"path": "skills/engineering/retro",
+		"ref": "a7d038f6bf7f01b516408e95e2fb56e0b338fa6f",
+		"license": "MIT"
+	},
+	"adapted": [
+		"removed upstream `disable-model-invocation: true` and `allow_implicit_invocation: false`; an installed user-invoked skill is invisible to the agent, so a typed invocation fails in any runtime that does not expand the skill name first",
+		"gave the description trigger branches, so the always-loaded pointer says when to load the skill"
+	]
+}
